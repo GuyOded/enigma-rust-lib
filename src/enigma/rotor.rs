@@ -1,14 +1,22 @@
 use crate::enigma::consts;
 use phf::Map;
+mod rotors;
 
+#[derive(Debug)]
 struct RotorProps {
-    permutation: Map<char, char>,
-    inverse: Map<char, char>,
+    permutation: &'static Map<char, char>,
+    inverse: &'static Map<char, char>,
     step_position: u8,
 }
 
 impl RotorProps {
-    fn new(permutation: Map<char, char>, inverse: Map<char, char>, step_position: u8) -> Self {
+    fn new(
+        permutation: &'static Map<char, char>,
+        inverse: &'static Map<char, char>,
+        step_position: char,
+    ) -> Self {
+        let step_position = step_position as u8 - consts::FIRST_LETTER as u8;
+
         Self {
             permutation,
             inverse,
@@ -17,6 +25,7 @@ impl RotorProps {
     }
 }
 
+#[derive(Debug)]
 struct Rotor {
     rotor_props: RotorProps,
     position: i8,

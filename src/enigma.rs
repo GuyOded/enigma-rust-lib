@@ -1,3 +1,3 @@
 mod consts;
 mod map_utils;
-mod rotors;
+mod rotor;
