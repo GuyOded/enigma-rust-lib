@@ -163,27 +163,27 @@ bidir_map!(ROTOR_5_PERMUTATION, ROTOR_5_INVERSE, {
     'Z' => 'K',
 });
 
-pub fn get_rotor_1() -> Rotor {
-    let props = RotorProps::new(&ROTOR_1_PERMUTATION, &ROTOR_1_INVERSE, 'R');
-    Rotor::new(props, 'A', 'A')
+pub fn create_rotor_1() -> Rotor {
+    let props = RotorProps::new(&ROTOR_1_PERMUTATION, &ROTOR_1_INVERSE, 'R', "Rotor 1");
+    Rotor::new(props, 'A', 'A', None)
 }
 
-pub fn get_rotor_2() -> Rotor {
-    let props = RotorProps::new(&ROTOR_2_PERMUTATION, &ROTOR_2_INVERSE, 'F');
-    Rotor::new(props, 'A', 'A')
+pub fn create_rotor_2() -> Rotor {
+    let props = RotorProps::new(&ROTOR_2_PERMUTATION, &ROTOR_2_INVERSE, 'F', "Rotor 2");
+    Rotor::new(props, 'A', 'A', None)
 }
 
-pub fn get_rotor_3() -> Rotor {
-    let props = RotorProps::new(&ROTOR_3_PERMUTATION, &ROTOR_3_INVERSE, 'W');
-    Rotor::new(props, 'A', 'A')
+pub fn create_rotor_3() -> Rotor {
+    let props = RotorProps::new(&ROTOR_3_PERMUTATION, &ROTOR_3_INVERSE, 'W', "Rotor 3");
+    Rotor::new(props, 'A', 'A', None)
 }
 
-pub fn get_rotor_4() -> Rotor {
-    let props = RotorProps::new(&ROTOR_4_PERMUTATION, &ROTOR_4_INVERSE, 'K');
-    Rotor::new(props, 'A', 'A')
+pub fn create_rotor_4() -> Rotor {
+    let props = RotorProps::new(&ROTOR_4_PERMUTATION, &ROTOR_4_INVERSE, 'K', "Rotor 4");
+    Rotor::new(props, 'A', 'A', None)
 }
 
-pub fn get_rotor_5() -> Rotor {
-    let props = RotorProps::new(&ROTOR_5_PERMUTATION, &ROTOR_5_INVERSE, 'A');
-    Rotor::new(props, 'A', 'A')
+pub fn create_rotor_5() -> Rotor {
+    let props = RotorProps::new(&ROTOR_5_PERMUTATION, &ROTOR_5_INVERSE, 'A', "Rotor 5");
+    Rotor::new(props, 'A', 'A', None)
 }

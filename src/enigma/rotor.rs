@@ -7,6 +7,7 @@ struct RotorProps {
     permutation: &'static Map<char, char>,
     inverse: &'static Map<char, char>,
     step_position: u8,
+    name: &'static str,
 }
 
 impl RotorProps {
@@ -14,6 +15,7 @@ impl RotorProps {
         permutation: &'static Map<char, char>,
         inverse: &'static Map<char, char>,
         step_position: char,
+        name: &'static str,
     ) -> Self {
         let step_position = step_position as u8 - consts::FIRST_LETTER as u8;
 
@@ -21,6 +23,7 @@ impl RotorProps {
             permutation,
             inverse,
             step_position,
+            name,
         }
     }
 }
@@ -30,10 +33,16 @@ struct Rotor {
     rotor_props: RotorProps,
     position: i8,
     ring_setting: i8,
+    next_rotor: Option<Box<Rotor>>,
 }
 
 impl Rotor {
-    pub fn new(props: RotorProps, position: char, ring_setting: char) -> Self {
+    pub fn new(
+        props: RotorProps,
+        position: char,
+        ring_setting: char,
+        next_rotor: Option<Box<Rotor>>,
+    ) -> Self {
         if !ring_setting.is_alphabetic() || !position.is_alphabetic() {
             panic!("Position and ring setting must letters")
         }
@@ -48,6 +57,7 @@ impl Rotor {
             rotor_props: props,
             position,
             ring_setting,
+            next_rotor,
         }
     }
 
@@ -70,10 +80,16 @@ impl Rotor {
     pub fn increment(&mut self) {
         self.position += 1;
         self.position %= consts::ALPHABET_SIZE as i8;
+        if let Some(next_rotor) = &mut self.next_rotor
+            && self.position == self.rotor_props.step_position as i8
+        {
+            next_rotor.increment();
+        }
     }
 
-    pub fn increment_and_get(&mut self) {
-        todo!()
+    pub fn increment_and_get(&mut self, letter: char) -> char {
+        self.increment();
+        self.calculate_mapped_letter(letter)
     }
 
     pub fn set_position(&mut self, position: char) {
