@@ -1,7 +1,7 @@
 use phf::{Map, phf_map};
 
 #[derive(Debug)]
-struct Reflector {
+pub struct Reflector {
     pub map: &'static Map<char, char>,
     name: &'static str,
 }
@@ -151,35 +151,35 @@ static REFLECTOR_GAMMA_MAP: Map<char, char> = phf_map!(
     'Z' => 'D',
 );
 
-fn get_reflector_a() -> Reflector {
+pub fn get_reflector_a() -> Reflector {
     Reflector {
         map: &REFLECTOR_A_MAP,
         name: "Reflector A",
     }
 }
 
-fn get_reflector_b() -> Reflector {
+pub fn get_reflector_b() -> Reflector {
     Reflector {
         map: &REFLECTOR_B_MAP,
         name: "Reflector B",
     }
 }
 
-fn get_reflector_c() -> Reflector {
+pub fn get_reflector_c() -> Reflector {
     Reflector {
         map: &REFLECTOR_C_MAP,
         name: "Reflector C",
     }
 }
 
-fn get_reflector_beta() -> Reflector {
+pub fn get_reflector_beta() -> Reflector {
     Reflector {
         map: &REFLECTOR_BETA_MAP,
         name: "Reflector Beta",
     }
 }
 
-fn get_reflector_gamma() -> Reflector {
+pub fn get_reflector_gamma() -> Reflector {
     Reflector {
         map: &REFLECTOR_GAMMA_MAP,
         name: "Reflector Gamma",

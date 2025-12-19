@@ -1,3 +1,5 @@
+use std::{cell::RefCell, rc::Rc};
+
 use crate::enigma::consts;
 use phf::Map;
 mod rotors;
@@ -29,11 +31,11 @@ impl RotorProps {
 }
 
 #[derive(Debug)]
-struct Rotor {
+pub struct Rotor {
     rotor_props: RotorProps,
     position: i8,
     ring_setting: i8,
-    next_rotor: Option<Box<Rotor>>,
+    next_rotor: Option<Rc<RefCell<Rotor>>>,
 }
 
 impl Rotor {
@@ -41,7 +43,7 @@ impl Rotor {
         props: RotorProps,
         position: char,
         ring_setting: char,
-        next_rotor: Option<Box<Rotor>>,
+        next_rotor: Option<Rc<RefCell<Rotor>>>,
     ) -> Self {
         if !ring_setting.is_alphabetic() || !position.is_alphabetic() {
             panic!("Position and ring setting must letters")
@@ -61,7 +63,7 @@ impl Rotor {
         }
     }
 
-    pub fn calculate_mapped_letter(&self, letter: char) -> char {
+    pub fn map_letter(&self, letter: char) -> char {
         self.calculate_mapped_letter_by_ring_setting(
             letter,
             &self.rotor_props.permutation,
@@ -69,7 +71,7 @@ impl Rotor {
         )
     }
 
-    pub fn calculate_inverse_letter(&self, letter: char) -> char {
+    pub fn inverse_map_letter(&self, letter: char) -> char {
         self.calculate_mapped_letter_by_ring_setting(
             letter,
             &self.rotor_props.inverse,
@@ -83,13 +85,13 @@ impl Rotor {
         if let Some(next_rotor) = &mut self.next_rotor
             && self.position == self.rotor_props.step_position as i8
         {
-            next_rotor.increment();
+            next_rotor.borrow_mut().increment();
         }
     }
 
-    pub fn increment_and_get(&mut self, letter: char) -> char {
+    pub fn increment_and_map(&mut self, letter: char) -> char {
         self.increment();
-        self.calculate_mapped_letter(letter)
+        self.map_letter(letter)
     }
 
     pub fn set_position(&mut self, position: char) {
@@ -109,6 +111,10 @@ impl Rotor {
         }
 
         self.position = position as i8;
+    }
+
+    pub(super) fn set_next_rotor(&mut self, rotor: Rc<RefCell<Rotor>>) {
+        self.next_rotor = Some(rotor);
     }
 
     fn calculate_mapped_letter_by_ring_setting(
