@@ -2,10 +2,10 @@ use std::{cell::RefCell, rc::Rc};
 
 use crate::enigma::consts;
 use phf::Map;
-mod rotors;
+pub mod rotors;
 
 #[derive(Debug)]
-struct RotorProps {
+pub(super) struct RotorProps {
     permutation: &'static Map<char, char>,
     inverse: &'static Map<char, char>,
     step_position: u8,
@@ -39,7 +39,7 @@ pub struct Rotor {
 }
 
 impl Rotor {
-    pub fn new(
+    pub(super) fn new(
         props: RotorProps,
         position: char,
         ring_setting: char,
@@ -125,22 +125,25 @@ impl Rotor {
     ) -> char {
         let letter = match letter.is_alphabetic() {
             true => letter.to_ascii_uppercase(),
-            false => panic!("Letter {letter} is not alphabetic"),
+            false => panic!("Letter '{letter}' is not alphabetic"),
         };
 
         let position_reduced_by_ring_setting: u8 =
             (self.position - ring_setting_number).rem_euclid(consts::ALPHABET_SIZE as i8) as u8;
 
-        let position_permuted_by_ring_setting =
-            consts::FIRST_LETTER as u8 + position_reduced_by_ring_setting;
-        let input_letter =
-            (letter as u8 - consts::FIRST_LETTER as u8 + position_permuted_by_ring_setting) as char;
+        let input_index = (letter as i8 - consts::FIRST_LETTER as i8
+            + position_reduced_by_ring_setting as i8)
+            .rem_euclid(consts::ALPHABET_SIZE as i8) as u8;
+        let input_letter = (input_index + consts::FIRST_LETTER as u8) as char;
 
         let mapped_letter = letter_map.get(&input_letter).unwrap();
 
-        let mapped_letter_increased_by_ring_setting = (*mapped_letter as i8 + ring_setting_number)
+        let mapped_letter_increased_by_ring_setting = ((*mapped_letter as i8
+            - consts::FIRST_LETTER as i8
+            - position_reduced_by_ring_setting as i8)
             .rem_euclid(consts::ALPHABET_SIZE as i8)
+            + consts::FIRST_LETTER as i8)
             as u8;
-        (mapped_letter_increased_by_ring_setting + consts::ALPHABET_SIZE as u8) as char
+        (mapped_letter_increased_by_ring_setting) as char
     }
 }

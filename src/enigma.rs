@@ -1,12 +1,17 @@
 mod consts;
 mod map_utils;
-mod reflectors;
-mod rotor;
+pub mod reflectors;
+pub mod rotor;
 
 use reflectors::Reflector;
 use rotor::Rotor;
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{
+    cell::{Ref, RefCell},
+    collections::HashMap,
+    rc::Rc,
+};
 
+#[derive(Debug)]
 pub struct Enigma {
     left_rotor: Rc<RefCell<Rotor>>,
     middle_rotor: Rc<RefCell<Rotor>>,
@@ -29,6 +34,9 @@ impl Enigma {
         middle_rotor
             .borrow_mut()
             .set_next_rotor(Rc::clone(&left_rotor));
+        right_rotor
+            .borrow_mut()
+            .set_next_rotor(Rc::clone(&middle_rotor));
 
         Self {
             left_rotor,
@@ -55,7 +63,7 @@ impl Enigma {
         *self.transpositions.get(&enciphered).unwrap_or(&enciphered)
     }
 
-    pub fn encrypt(&self, text: &String) -> String {
+    pub fn encrypt(&self, text: String) -> String {
         text.chars().map(|c| self.encrypt_char(c)).collect()
     }
 
@@ -75,5 +83,29 @@ impl Enigma {
 
         self.transpositions.insert(first, second);
         self.transpositions.insert(second, first);
+    }
+
+    pub fn set_left_rotor(&mut self, rotor: Rotor) {
+        self.left_rotor = Rc::new(RefCell::new(rotor));
+        self.middle_rotor
+            .borrow_mut()
+            .set_next_rotor(Rc::clone(&self.left_rotor));
+    }
+
+    pub fn set_middle_rotor(&mut self, rotor: Rotor) {
+        self.middle_rotor = Rc::new(RefCell::new(rotor));
+        self.middle_rotor
+            .borrow_mut()
+            .set_next_rotor(Rc::clone(&self.left_rotor));
+        self.right_rotor
+            .borrow_mut()
+            .set_next_rotor(Rc::clone(&self.middle_rotor));
+    }
+
+    pub fn set_right_rotor(&mut self, rotor: Rotor) {
+        self.right_rotor = Rc::new(RefCell::new(rotor));
+        self.right_rotor
+            .borrow_mut()
+            .set_next_rotor(Rc::clone(&self.middle_rotor));
     }
 }

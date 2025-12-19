@@ -151,35 +151,35 @@ static REFLECTOR_GAMMA_MAP: Map<char, char> = phf_map!(
     'Z' => 'D',
 );
 
-pub fn get_reflector_a() -> Reflector {
+pub fn create_reflector_a() -> Reflector {
     Reflector {
         map: &REFLECTOR_A_MAP,
         name: "Reflector A",
     }
 }
 
-pub fn get_reflector_b() -> Reflector {
+pub fn create_reflector_b() -> Reflector {
     Reflector {
         map: &REFLECTOR_B_MAP,
         name: "Reflector B",
     }
 }
 
-pub fn get_reflector_c() -> Reflector {
+pub fn create_reflector_c() -> Reflector {
     Reflector {
         map: &REFLECTOR_C_MAP,
         name: "Reflector C",
     }
 }
 
-pub fn get_reflector_beta() -> Reflector {
+pub fn create_reflector_beta() -> Reflector {
     Reflector {
         map: &REFLECTOR_BETA_MAP,
         name: "Reflector Beta",
     }
 }
 
-pub fn get_reflector_gamma() -> Reflector {
+pub fn create_reflector_gamma() -> Reflector {
     Reflector {
         map: &REFLECTOR_GAMMA_MAP,
         name: "Reflector Gamma",
