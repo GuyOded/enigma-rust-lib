@@ -1,6 +1,6 @@
 use phf::{Map, phf_map};
 
-use crate::enigma::rotor::{Rotor, RotorProps};
+use crate::rotor::{Rotor, RotorProps};
 
 macro_rules! bidir_map {
     ($forward:ident, $inverse:ident, {$($k:expr => $v:expr),*$(,)?}) => {

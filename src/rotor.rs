@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use std::{cell::RefCell, rc::Rc};
 
-use crate::enigma::{consts, error::Error};
+use crate::{consts, error::Error};
 use phf::Map;
 pub mod rotors;
 
