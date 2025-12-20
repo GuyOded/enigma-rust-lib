@@ -1,15 +1,10 @@
 mod consts;
-mod map_utils;
 pub mod reflectors;
 pub mod rotor;
 
 use reflectors::Reflector;
 use rotor::Rotor;
-use std::{
-    cell::{Ref, RefCell},
-    collections::HashMap,
-    rc::Rc,
-};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 #[derive(Debug)]
 pub struct Enigma {
@@ -107,5 +102,29 @@ impl Enigma {
         self.right_rotor
             .borrow_mut()
             .set_next_rotor(Rc::clone(&self.middle_rotor));
+    }
+
+    pub fn get_left_rotor_position(&self) -> char {
+        self.left_rotor.borrow().get_position()
+    }
+
+    pub fn get_middle_rotor_position(&self) -> char {
+        self.middle_rotor.borrow().get_position()
+    }
+
+    pub fn get_right_rotor_position(&self) -> char {
+        self.right_rotor.borrow().get_position()
+    }
+
+    pub fn set_left_rotor_position(&mut self, position: char) {
+        self.left_rotor.borrow_mut().set_position(position);
+    }
+
+    pub fn set_middle_rotor_position(&mut self, position: char) {
+        self.middle_rotor.borrow_mut().set_position(position);
+    }
+
+    pub fn set_right_rotor_position(&mut self, position: char) {
+        self.right_rotor.borrow_mut().set_position(position);
     }
 }

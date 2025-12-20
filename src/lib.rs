@@ -1,11 +1,9 @@
-mod enigma;
+pub mod enigma;
 
 #[cfg(test)]
 mod tests {
     use crate::enigma::rotor::rotors;
     use crate::enigma::{Enigma, reflectors};
-
-    use super::*;
 
     #[test]
     fn enigma_encrypts() {
@@ -62,5 +60,46 @@ Outside, the street continued being a street with admirable consistency. Cars pa
         let plain = enigma.encrypt(cipher);
 
         assert_eq!(plain, cleaned_text.to_ascii_uppercase())
+    }
+
+    #[test]
+    fn enigma_position_set_properly() {
+        let left = rotors::create_rotor_3();
+        let middle = rotors::create_rotor_2();
+        let right = rotors::create_rotor_1();
+        let reflector = reflectors::create_reflector_b();
+
+        let mut enigma = Enigma::new(left, middle, right, reflector);
+
+        let encrypted = enigma.encrypt(String::from("HelloWorld"));
+
+        enigma.set_left_rotor_position('A');
+        enigma.set_middle_rotor_position('A');
+        enigma.set_right_rotor_position('A');
+
+        let plain = enigma.encrypt(encrypted);
+
+        assert_eq!(plain, "HELLOWORLD");
+    }
+
+    #[test]
+    fn rotor_state_should_change() {
+        let left = rotors::create_rotor_3();
+        let middle = rotors::create_rotor_2();
+        let right = rotors::create_rotor_1();
+        let reflector = reflectors::create_reflector_b();
+
+        let enigma = Enigma::new(left, middle, right, reflector);
+
+        let text = String::from(
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        );
+        enigma.encrypt(text);
+
+        println!("{:#?}", enigma);
+
+        assert_ne!(enigma.get_left_rotor_position(), 'A');
+        assert_ne!(enigma.get_middle_rotor_position(), 'A');
+        assert_ne!(enigma.get_right_rotor_position(), 'A');
     }
 }

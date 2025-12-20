@@ -1,15 +1,24 @@
+use std::fmt::Debug;
 use std::{cell::RefCell, rc::Rc};
 
 use crate::enigma::consts;
 use phf::Map;
 pub mod rotors;
 
-#[derive(Debug)]
 pub(super) struct RotorProps {
     permutation: &'static Map<char, char>,
     inverse: &'static Map<char, char>,
     step_position: u8,
     name: &'static str,
+}
+
+impl Debug for RotorProps {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("RotorProps")
+            .field("step_position", &self.step_position)
+            .field("name", &self.name)
+            .finish()
+    }
 }
 
 impl RotorProps {
@@ -100,6 +109,10 @@ impl Rotor {
         }
 
         self.position = position.to_ascii_uppercase() as i8 - consts::FIRST_LETTER as i8;
+    }
+
+    pub fn get_position(&self) -> char {
+        (self.position as u8 + consts::FIRST_LETTER as u8) as char
     }
 
     pub fn set_position_from_int(&mut self, position: u8) {

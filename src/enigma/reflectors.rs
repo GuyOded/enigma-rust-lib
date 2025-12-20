@@ -3,7 +3,7 @@ use phf::{Map, phf_map};
 #[derive(Debug)]
 pub struct Reflector {
     pub map: &'static Map<char, char>,
-    name: &'static str,
+    pub name: &'static str,
 }
 
 static REFLECTOR_A_MAP: Map<char, char> = phf_map!(
