@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use std::{cell::RefCell, rc::Rc};
 
-use crate::enigma::consts;
+use crate::enigma::{consts, error::Error};
 use phf::Map;
 pub mod rotors;
 
@@ -72,7 +72,7 @@ impl Rotor {
         }
     }
 
-    pub fn map_letter(&self, letter: char) -> char {
+    pub fn map_letter(&self, letter: char) -> Result<char, Error> {
         self.calculate_mapped_letter_by_ring_setting(
             letter,
             &self.rotor_props.permutation,
@@ -80,7 +80,7 @@ impl Rotor {
         )
     }
 
-    pub fn inverse_map_letter(&self, letter: char) -> char {
+    pub fn inverse_map_letter(&self, letter: char) -> Result<char, Error> {
         self.calculate_mapped_letter_by_ring_setting(
             letter,
             &self.rotor_props.inverse,
@@ -98,7 +98,7 @@ impl Rotor {
         }
     }
 
-    pub fn increment_and_map(&mut self, letter: char) -> char {
+    pub fn increment_and_map(&mut self, letter: char) -> Result<char, Error> {
         self.increment();
         self.map_letter(letter)
     }
@@ -135,10 +135,10 @@ impl Rotor {
         letter: char,
         letter_map: &Map<char, char>,
         ring_setting_number: i8,
-    ) -> char {
+    ) -> Result<char, Error> {
         let letter = match letter.is_alphabetic() {
             true => letter.to_ascii_uppercase(),
-            false => panic!("Letter '{letter}' is not alphabetic"),
+            false => return Err(Error::NonAlphabetic),
         };
 
         let position_reduced_by_ring_setting: u8 =
@@ -157,6 +157,6 @@ impl Rotor {
             .rem_euclid(consts::ALPHABET_SIZE as i8)
             + consts::FIRST_LETTER as i8)
             as u8;
-        (mapped_letter_increased_by_ring_setting) as char
+        Ok((mapped_letter_increased_by_ring_setting) as char)
     }
 }

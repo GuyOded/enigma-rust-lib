@@ -2,6 +2,7 @@ pub mod enigma;
 
 #[cfg(test)]
 mod tests {
+    use crate::enigma::error::Error;
     use crate::enigma::rotor::rotors;
     use crate::enigma::{Enigma, reflectors};
 
@@ -14,7 +15,7 @@ mod tests {
 
         let enigma = Enigma::new(left, middle, right, reflector);
 
-        let encrypted = enigma.encrypt(String::from("HelloWorld"));
+        let encrypted = enigma.encrypt(String::from("HelloWorld")).unwrap();
 
         assert_eq!(encrypted.as_str(), "MFNCZBBFZM");
     }
@@ -28,7 +29,7 @@ mod tests {
 
         let enigma = Enigma::new(left, middle, right, reflector);
 
-        let deciphered = enigma.encrypt(String::from("MFNCZBBFZM"));
+        let deciphered = enigma.encrypt(String::from("MFNCZBBFZM")).unwrap();
 
         assert_eq!(deciphered, "HELLOWORLD");
     }
@@ -52,12 +53,12 @@ Outside, the street continued being a street with admirable consistency. Cars pa
             .replace("-", "")
             .replace("\n", "");
 
-        let cipher = enigma.encrypt(cleaned_text.clone());
+        let cipher = enigma.encrypt(cleaned_text.clone()).unwrap();
         enigma.set_left_rotor(rotors::create_rotor_3());
         enigma.set_middle_rotor(rotors::create_rotor_2());
         enigma.set_right_rotor(rotors::create_rotor_1());
 
-        let plain = enigma.encrypt(cipher);
+        let plain = enigma.encrypt(cipher).unwrap();
 
         assert_eq!(plain, cleaned_text.to_ascii_uppercase())
     }
@@ -71,13 +72,13 @@ Outside, the street continued being a street with admirable consistency. Cars pa
 
         let mut enigma = Enigma::new(left, middle, right, reflector);
 
-        let encrypted = enigma.encrypt(String::from("HelloWorld"));
+        let encrypted = enigma.encrypt(String::from("HelloWorld")).unwrap();
 
         enigma.set_left_rotor_position('A');
         enigma.set_middle_rotor_position('A');
         enigma.set_right_rotor_position('A');
 
-        let plain = enigma.encrypt(encrypted);
+        let plain = enigma.encrypt(encrypted).unwrap();
 
         assert_eq!(plain, "HELLOWORLD");
     }
@@ -94,12 +95,23 @@ Outside, the street continued being a street with admirable consistency. Cars pa
         let text = String::from(
             "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
         );
-        enigma.encrypt(text);
-
-        println!("{:#?}", enigma);
+        let _ = enigma.encrypt(text);
 
         assert_ne!(enigma.get_left_rotor_position(), 'A');
         assert_ne!(enigma.get_middle_rotor_position(), 'A');
         assert_ne!(enigma.get_right_rotor_position(), 'A');
+    }
+
+    #[test]
+    fn non_alphabetic_encryption_should_return_error() {
+        let left = rotors::create_rotor_3();
+        let middle = rotors::create_rotor_2();
+        let right = rotors::create_rotor_1();
+        let reflector = reflectors::create_reflector_b();
+
+        let enigma = Enigma::new(left, middle, right, reflector);
+
+        let r = enigma.encrypt_char(' ');
+        assert_eq!(r.err().unwrap(), Error::NonAlphabetic)
     }
 }

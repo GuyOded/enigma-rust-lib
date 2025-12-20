@@ -1,10 +1,13 @@
 mod consts;
+pub mod error;
 pub mod reflectors;
 pub mod rotor;
 
 use reflectors::Reflector;
 use rotor::Rotor;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
+
+use crate::enigma::error::Error;
 
 #[derive(Debug)]
 pub struct Enigma {
@@ -42,23 +45,26 @@ impl Enigma {
         }
     }
 
-    pub fn encrypt_char(&self, letter: char) -> char {
+    pub fn encrypt_char(&self, letter: char) -> Result<char, Error> {
         let enciphered = self.transpositions.get(&letter).unwrap_or(&letter);
 
-        let enciphered = self.right_rotor.borrow_mut().increment_and_map(*enciphered);
-        let enciphered = self.middle_rotor.borrow().map_letter(enciphered);
-        let enciphered = self.left_rotor.borrow().map_letter(enciphered);
+        let enciphered = self
+            .right_rotor
+            .borrow_mut()
+            .increment_and_map(*enciphered)?;
+        let enciphered = self.middle_rotor.borrow().map_letter(enciphered)?;
+        let enciphered = self.left_rotor.borrow().map_letter(enciphered)?;
 
         let enciphered = self.reflector.map.get(&enciphered).unwrap_or(&enciphered);
 
-        let enciphered = self.left_rotor.borrow().inverse_map_letter(*enciphered);
-        let enciphered = self.middle_rotor.borrow().inverse_map_letter(enciphered);
-        let enciphered = self.right_rotor.borrow().inverse_map_letter(enciphered);
+        let enciphered = self.left_rotor.borrow().inverse_map_letter(*enciphered)?;
+        let enciphered = self.middle_rotor.borrow().inverse_map_letter(enciphered)?;
+        let enciphered = self.right_rotor.borrow().inverse_map_letter(enciphered)?;
 
-        *self.transpositions.get(&enciphered).unwrap_or(&enciphered)
+        Ok(*self.transpositions.get(&enciphered).unwrap_or(&enciphered))
     }
 
-    pub fn encrypt(&self, text: String) -> String {
+    pub fn encrypt(&self, text: String) -> Result<String, Error> {
         text.chars().map(|c| self.encrypt_char(c)).collect()
     }
 
