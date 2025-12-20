@@ -110,6 +110,10 @@ impl Enigma {
             .set_next_rotor(Rc::clone(&self.middle_rotor));
     }
 
+    pub fn set_reflector(&mut self, reflector: Reflector) {
+        self.reflector = reflector;
+    }
+
     pub fn get_left_rotor_position(&self) -> char {
         self.left_rotor.borrow().get_position()
     }
