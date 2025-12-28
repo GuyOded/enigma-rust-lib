@@ -93,64 +93,6 @@ static REFLECTOR_C_MAP: Map<char, char> = phf_map!(
     'Z' => 'L',
 );
 
-static REFLECTOR_BETA_MAP: Map<char, char> = phf_map!(
-    'A' => 'L',
-    'B' => 'E',
-    'C' => 'Y',
-    'D' => 'J',
-    'E' => 'V',
-    'F' => 'C',
-    'G' => 'N',
-    'H' => 'I',
-    'I' => 'X',
-    'J' => 'W',
-    'K' => 'P',
-    'L' => 'B',
-    'M' => 'Q',
-    'N' => 'M',
-    'O' => 'D',
-    'P' => 'R',
-    'Q' => 'T',
-    'R' => 'A',
-    'S' => 'K',
-    'T' => 'Z',
-    'U' => 'G',
-    'V' => 'F',
-    'W' => 'U',
-    'X' => 'H',
-    'Y' => 'O',
-    'Z' => 'S',
-);
-
-static REFLECTOR_GAMMA_MAP: Map<char, char> = phf_map!(
-    'A' => 'F',
-    'B' => 'S',
-    'C' => 'O',
-    'D' => 'K',
-    'E' => 'A',
-    'F' => 'N',
-    'G' => 'U',
-    'H' => 'E',
-    'I' => 'R',
-    'J' => 'H',
-    'K' => 'M',
-    'L' => 'B',
-    'M' => 'T',
-    'N' => 'I',
-    'O' => 'Y',
-    'P' => 'C',
-    'Q' => 'W',
-    'R' => 'L',
-    'S' => 'Q',
-    'T' => 'P',
-    'U' => 'Z',
-    'V' => 'X',
-    'W' => 'V',
-    'X' => 'G',
-    'Y' => 'J',
-    'Z' => 'D',
-);
-
 pub fn create_reflector_a() -> Reflector {
     Reflector {
         map: &REFLECTOR_A_MAP,
@@ -169,19 +111,5 @@ pub fn create_reflector_c() -> Reflector {
     Reflector {
         map: &REFLECTOR_C_MAP,
         name: "Reflector C",
-    }
-}
-
-pub fn create_reflector_beta() -> Reflector {
-    Reflector {
-        map: &REFLECTOR_BETA_MAP,
-        name: "Reflector Beta",
-    }
-}
-
-pub fn create_reflector_gamma() -> Reflector {
-    Reflector {
-        map: &REFLECTOR_GAMMA_MAP,
-        name: "Reflector Gamma",
     }
 }
