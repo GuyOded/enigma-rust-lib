@@ -46,6 +46,7 @@ impl Enigma {
     }
 
     pub fn encrypt_char(&self, letter: char) -> Result<char, Error> {
+        let letter = letter.to_ascii_uppercase();
         let enciphered = self.transpositions.get(&letter).unwrap_or(&letter);
 
         let enciphered = self
@@ -252,5 +253,40 @@ Outside, the street continued being a street with admirable consistency. Cars pa
 
         let r = enigma.encrypt_char(' ');
         assert_eq!(r.err().unwrap(), Error::NonAlphabetic)
+    }
+
+    #[test]
+    fn encrypt_and_decrypt_with_transpositions_should_result_in_plain() {
+        let left = rotors::create_rotor_2();
+        let mid = rotors::create_rotor_1();
+        let right = rotors::create_rotor_4();
+
+        let reflector = reflectors::create_reflector_a();
+
+        let mut enigma = Enigma::new(left, mid, right, reflector);
+
+        enigma.set_transposition('H', 'G');
+        enigma.set_transposition('I', 'D');
+        enigma.set_transposition('Z', 'U');
+        enigma.set_transposition('B', 'X');
+        enigma.set_transposition('F', 'W');
+        enigma.set_transposition('A', 'M');
+        enigma.set_transposition('Q', 'V');
+        enigma.set_transposition('K', 'N');
+        enigma.set_transposition('P', 'E');
+
+        enigma.set_left_rotor_position('G');
+        enigma.set_middle_rotor_position('I');
+        enigma.set_right_rotor_position('I');
+
+        let cipher = enigma.encrypt(String::from("internal")).unwrap();
+
+        enigma.set_left_rotor_position('G');
+        enigma.set_middle_rotor_position('I');
+        enigma.set_right_rotor_position('I');
+
+        let decipher = enigma.encrypt(cipher).unwrap();
+
+        assert_eq!(decipher, "INTERNAL");
     }
 }
