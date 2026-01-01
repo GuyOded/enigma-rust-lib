@@ -69,6 +69,10 @@ impl Enigma {
         text.chars().map(|c| self.encrypt_char(c)).collect()
     }
 
+    pub fn encrypt_iter(&self, text: &String) -> impl Iterator<Item = Result<char, Error>> {
+        text.chars().map(|c| self.encrypt_char(c))
+    }
+
     pub fn set_transposition(&mut self, first: char, second: char) {
         let (first, second) = match (first.is_alphabetic(), second.is_alphabetic()) {
             (true, true) => (first.to_ascii_uppercase(), second.to_ascii_uppercase()),
@@ -288,5 +292,22 @@ Outside, the street continued being a street with admirable consistency. Cars pa
         let decipher = enigma.encrypt(cipher).unwrap();
 
         assert_eq!(decipher, "INTERNAL");
+    }
+
+    #[test]
+    fn enigma_should_encrypt_with_iterator() {
+        let left = rotors::create_rotor_3();
+        let middle = rotors::create_rotor_2();
+        let right = rotors::create_rotor_1();
+        let reflector = reflectors::create_reflector_b();
+
+        let enigma = Enigma::new(left, middle, right, reflector);
+
+        let encrypted: String = enigma
+            .encrypt_iter(&String::from("HelloWorld"))
+            .map(|r| r.unwrap())
+            .collect();
+
+        assert_eq!(encrypted, "MFNCZBBFZM");
     }
 }
