@@ -1,6 +1,6 @@
 use phf::{Map, phf_map};
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Reflector {
     pub map: &'static Map<char, char>,
     pub name: &'static str,

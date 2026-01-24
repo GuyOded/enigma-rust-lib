@@ -5,6 +5,7 @@ use crate::{consts, error::Error};
 use phf::Map;
 pub mod rotors;
 
+#[derive(Clone, Copy)]
 pub(super) struct RotorProps {
     permutation: &'static Map<char, char>,
     inverse: &'static Map<char, char>,
@@ -39,7 +40,7 @@ impl RotorProps {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Rotor {
     rotor_props: RotorProps,
     position: i8,

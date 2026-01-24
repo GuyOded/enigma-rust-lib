@@ -65,11 +65,19 @@ impl Enigma {
         Ok(*self.transpositions.get(&enciphered).unwrap_or(&enciphered))
     }
 
-    pub fn encrypt(&self, text: String) -> Result<String, Error> {
+    pub fn encrypt_string(&self, text: String) -> Result<String, Error> {
         text.chars().map(|c| self.encrypt_char(c)).collect()
     }
 
-    pub fn encrypt_iter(&self, text: &String) -> impl Iterator<Item = Result<char, Error>> {
+    pub fn encrypt_str(&self, text: &str) -> Result<String, Error> {
+        text.chars().map(|c| self.encrypt_char(c)).collect()
+    }
+
+    pub fn encrypt_string_iter(&self, text: &String) -> impl Iterator<Item = Result<char, Error>> {
+        text.chars().map(|c| self.encrypt_char(c))
+    }
+
+    pub fn encrypt_str_iter(&self, text: &str) -> impl Iterator<Item = Result<char, Error>> {
         text.chars().map(|c| self.encrypt_char(c))
     }
 
@@ -159,7 +167,7 @@ mod tests {
 
         let enigma = Enigma::new(left, middle, right, reflector);
 
-        let encrypted = enigma.encrypt(String::from("HelloWorld")).unwrap();
+        let encrypted = enigma.encrypt_string(String::from("HelloWorld")).unwrap();
 
         assert_eq!(encrypted.as_str(), "MFNCZBBFZM");
     }
@@ -173,7 +181,7 @@ mod tests {
 
         let enigma = Enigma::new(left, middle, right, reflector);
 
-        let deciphered = enigma.encrypt(String::from("MFNCZBBFZM")).unwrap();
+        let deciphered = enigma.encrypt_string(String::from("MFNCZBBFZM")).unwrap();
 
         assert_eq!(deciphered, "HELLOWORLD");
     }
@@ -197,12 +205,12 @@ Outside, the street continued being a street with admirable consistency. Cars pa
             .replace("-", "")
             .replace("\n", "");
 
-        let cipher = enigma.encrypt(cleaned_text.clone()).unwrap();
+        let cipher = enigma.encrypt_string(cleaned_text.clone()).unwrap();
         enigma.set_left_rotor(rotors::create_rotor_3());
         enigma.set_middle_rotor(rotors::create_rotor_2());
         enigma.set_right_rotor(rotors::create_rotor_1());
 
-        let plain = enigma.encrypt(cipher).unwrap();
+        let plain = enigma.encrypt_string(cipher).unwrap();
 
         assert_eq!(plain, cleaned_text.to_ascii_uppercase())
     }
@@ -216,13 +224,13 @@ Outside, the street continued being a street with admirable consistency. Cars pa
 
         let mut enigma = Enigma::new(left, middle, right, reflector);
 
-        let encrypted = enigma.encrypt(String::from("HelloWorld")).unwrap();
+        let encrypted = enigma.encrypt_string(String::from("HelloWorld")).unwrap();
 
         enigma.set_left_rotor_position('A');
         enigma.set_middle_rotor_position('A');
         enigma.set_right_rotor_position('A');
 
-        let plain = enigma.encrypt(encrypted).unwrap();
+        let plain = enigma.encrypt_string(encrypted).unwrap();
 
         assert_eq!(plain, "HELLOWORLD");
     }
@@ -239,7 +247,7 @@ Outside, the street continued being a street with admirable consistency. Cars pa
         let text = String::from(
             "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
         );
-        let _ = enigma.encrypt(text);
+        let _ = enigma.encrypt_string(text);
 
         assert_ne!(enigma.get_left_rotor_position(), 'A');
         assert_ne!(enigma.get_middle_rotor_position(), 'A');
@@ -283,13 +291,13 @@ Outside, the street continued being a street with admirable consistency. Cars pa
         enigma.set_middle_rotor_position('I');
         enigma.set_right_rotor_position('I');
 
-        let cipher = enigma.encrypt(String::from("internal")).unwrap();
+        let cipher = enigma.encrypt_string(String::from("internal")).unwrap();
 
         enigma.set_left_rotor_position('G');
         enigma.set_middle_rotor_position('I');
         enigma.set_right_rotor_position('I');
 
-        let decipher = enigma.encrypt(cipher).unwrap();
+        let decipher = enigma.encrypt_string(cipher).unwrap();
 
         assert_eq!(decipher, "INTERNAL");
     }
@@ -304,9 +312,23 @@ Outside, the street continued being a street with admirable consistency. Cars pa
         let enigma = Enigma::new(left, middle, right, reflector);
 
         let encrypted: String = enigma
-            .encrypt_iter(&String::from("HelloWorld"))
+            .encrypt_string_iter(&String::from("HelloWorld"))
             .map(|r| r.unwrap())
             .collect();
+
+        assert_eq!(encrypted, "MFNCZBBFZM");
+    }
+
+    #[test]
+    fn enigma_should_encrypt_with_str() {
+        let left = rotors::create_rotor_3();
+        let middle = rotors::create_rotor_2();
+        let right = rotors::create_rotor_1();
+        let reflector = reflectors::create_reflector_b();
+
+        let enigma = Enigma::new(left, middle, right, reflector);
+
+        let encrypted: String = enigma.encrypt_str("HelloWorld").unwrap();
 
         assert_eq!(encrypted, "MFNCZBBFZM");
     }
