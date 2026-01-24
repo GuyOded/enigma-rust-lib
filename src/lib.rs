@@ -139,16 +139,32 @@ impl Enigma {
         self.right_rotor.borrow().get_position()
     }
 
-    pub fn set_left_rotor_position(&mut self, position: char) {
+    pub fn set_left_rotor_position_from_char(&self, position: char) {
         self.left_rotor.borrow_mut().set_position(position);
     }
 
-    pub fn set_middle_rotor_position(&mut self, position: char) {
+    pub fn set_middle_rotor_position_from_char(&self, position: char) {
         self.middle_rotor.borrow_mut().set_position(position);
     }
 
-    pub fn set_right_rotor_position(&mut self, position: char) {
+    pub fn set_right_rotor_position_from_char(&self, position: char) {
         self.right_rotor.borrow_mut().set_position(position);
+    }
+
+    pub fn set_left_rotor_position_from_int(&self, position: u8) {
+        self.left_rotor.borrow_mut().set_position_from_int(position);
+    }
+
+    pub fn set_middle_rotor_position_from_int(&self, position: u8) {
+        self.middle_rotor
+            .borrow_mut()
+            .set_position_from_int(position);
+    }
+
+    pub fn set_right_rotor_position_from_int(&self, position: u8) {
+        self.right_rotor
+            .borrow_mut()
+            .set_position_from_int(position);
     }
 }
 
@@ -222,13 +238,13 @@ Outside, the street continued being a street with admirable consistency. Cars pa
         let right = rotors::create_rotor_1();
         let reflector = reflectors::create_reflector_b();
 
-        let mut enigma = Enigma::new(left, middle, right, reflector);
+        let enigma = Enigma::new(left, middle, right, reflector);
 
         let encrypted = enigma.encrypt_string(String::from("HelloWorld")).unwrap();
 
-        enigma.set_left_rotor_position('A');
-        enigma.set_middle_rotor_position('A');
-        enigma.set_right_rotor_position('A');
+        enigma.set_left_rotor_position_from_char('A');
+        enigma.set_middle_rotor_position_from_char('A');
+        enigma.set_right_rotor_position_from_char('A');
 
         let plain = enigma.encrypt_string(encrypted).unwrap();
 
@@ -287,15 +303,15 @@ Outside, the street continued being a street with admirable consistency. Cars pa
         enigma.set_transposition('K', 'N');
         enigma.set_transposition('P', 'E');
 
-        enigma.set_left_rotor_position('G');
-        enigma.set_middle_rotor_position('I');
-        enigma.set_right_rotor_position('I');
+        enigma.set_left_rotor_position_from_char('G');
+        enigma.set_middle_rotor_position_from_char('I');
+        enigma.set_right_rotor_position_from_char('I');
 
         let cipher = enigma.encrypt_string(String::from("internal")).unwrap();
 
-        enigma.set_left_rotor_position('G');
-        enigma.set_middle_rotor_position('I');
-        enigma.set_right_rotor_position('I');
+        enigma.set_left_rotor_position_from_char('G');
+        enigma.set_middle_rotor_position_from_char('I');
+        enigma.set_right_rotor_position_from_char('I');
 
         let decipher = enigma.encrypt_string(cipher).unwrap();
 

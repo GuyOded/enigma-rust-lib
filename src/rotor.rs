@@ -116,6 +116,7 @@ impl Rotor {
         (self.position as u8 + consts::FIRST_LETTER as u8) as char
     }
 
+    /// Sets position from an integer. Note that the 0 corresponds to 'A' and 25 corresponds to 'Z'.
     pub fn set_position_from_int(&mut self, position: u8) {
         if position >= consts::ALPHABET_SIZE as u8 {
             panic!(
@@ -159,5 +160,32 @@ impl Rotor {
             + consts::FIRST_LETTER as i8)
             as u8;
         Ok((mapped_letter_increased_by_ring_setting) as char)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::rotors;
+
+    #[test]
+    #[should_panic]
+    fn set_position_from_int_should_panic_when_out_of_bounds() {
+        let mut rotor = rotors::create_rotor_1();
+        rotor.set_position_from_int(27);
+    }
+
+    #[test]
+    #[should_panic]
+    fn set_position_panics_when_not_alphabetic() {
+        let mut rotor = rotors::create_rotor_1();
+        rotor.set_position('=');
+    }
+
+    #[test]
+    fn set_position_from_int_should_work() {
+        let mut rotor = rotors::create_rotor_1();
+        rotor.set_position_from_int(25);
+
+        assert_eq!(rotor.get_position(), 'Z');
     }
 }
