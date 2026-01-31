@@ -81,6 +81,25 @@ impl Enigma {
         text.chars().map(|c| self.encrypt_char(c))
     }
 
+    ///
+    /// Returns the encryption result of the character without incrementing the rotors
+    ///
+    pub fn peak_cipher(&self, char: char) -> Result<char, Error> {
+        let rotor_positions = (
+            self.get_left_rotor_position(),
+            self.get_middle_rotor_position(),
+            self.get_right_rotor_position(),
+        );
+
+        let encryption_result = self.encrypt_char(char);
+
+        self.set_left_rotor_position_from_char(rotor_positions.0);
+        self.set_middle_rotor_position_from_char(rotor_positions.1);
+        self.set_right_rotor_position_from_char(rotor_positions.2);
+
+        encryption_result
+    }
+
     pub fn set_transposition(&mut self, first: char, second: char) {
         let (first, second) = match (first.is_alphabetic(), second.is_alphabetic()) {
             (true, true) => (first.to_ascii_uppercase(), second.to_ascii_uppercase()),
@@ -347,5 +366,16 @@ Outside, the street continued being a street with admirable consistency. Cars pa
         let encrypted: String = enigma.encrypt_str("HelloWorld").unwrap();
 
         assert_eq!(encrypted, "MFNCZBBFZM");
+    }
+
+    #[test]
+    fn peaking_encryption_should_encrypt_without_incrementing() {
+        let left = rotors::create_rotor_3();
+        let middle = rotors::create_rotor_2();
+        let right = rotors::create_rotor_1();
+        let reflector = reflectors::create_reflector_b();
+
+        let enigma = Enigma::new(left, middle, right, reflector);
+        (0..28).for_each(|_| assert_eq!(enigma.peak_cipher('H').unwrap(), 'M'));
     }
 }
