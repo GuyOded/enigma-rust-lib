@@ -107,6 +107,10 @@ impl Enigma {
             (_, false) => panic!("Transposition characters must be letters but got '{second}'"),
         };
 
+        if first == second {
+            return;
+        }
+
         if let Some(value) = self.transpositions.remove(&first) {
             self.transpositions.remove(&value);
         }
@@ -116,6 +120,19 @@ impl Enigma {
 
         self.transpositions.insert(first, second);
         self.transpositions.insert(second, first);
+    }
+
+    pub fn clear_transposition(&mut self, letter: char) -> Option<char> {
+        if let Some(removed) = self.transpositions.remove(&letter) {
+            self.transpositions.remove(&removed);
+            return Some(removed);
+        }
+
+        None
+    }
+
+    pub fn clear_transpositions(&mut self) {
+        self.transpositions.clear();
     }
 
     pub fn set_left_rotor(&mut self, rotor: Rotor) {
@@ -189,6 +206,8 @@ impl Enigma {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+
     use crate::error::Error;
     use crate::rotor::rotors;
     use crate::{Enigma, reflectors};
@@ -377,5 +396,80 @@ Outside, the street continued being a street with admirable consistency. Cars pa
 
         let enigma = Enigma::new(left, middle, right, reflector);
         (0..28).for_each(|_| assert_eq!(enigma.peak_cipher('H').unwrap(), 'M'));
+    }
+
+    #[test]
+    fn setting_and_clearing_transposition_with_key_should_remove_it() {
+        let left = rotors::create_rotor_3();
+        let middle = rotors::create_rotor_2();
+        let right = rotors::create_rotor_1();
+        let reflector = reflectors::create_reflector_b();
+
+        let mut enigma = Enigma::new(left, middle, right, reflector);
+        enigma.set_transposition('A', 'B');
+        enigma.clear_transposition('A');
+
+        assert!(enigma.transpositions.is_empty())
+    }
+
+    #[test]
+    fn setting_and_clearing_transposition_with_value_should_remove_it() {
+        let left = rotors::create_rotor_3();
+        let middle = rotors::create_rotor_2();
+        let right = rotors::create_rotor_1();
+        let reflector = reflectors::create_reflector_b();
+
+        let mut enigma = Enigma::new(left, middle, right, reflector);
+        enigma.set_transposition('A', 'B');
+        enigma.clear_transposition('B');
+
+        assert!(enigma.transpositions.is_empty())
+    }
+
+    #[test]
+    fn setting_transpositions_with_same_key_and_value_should_do_nothing() {
+        let left = rotors::create_rotor_3();
+        let middle = rotors::create_rotor_2();
+        let right = rotors::create_rotor_1();
+        let reflector = reflectors::create_reflector_b();
+
+        let mut enigma = Enigma::new(left, middle, right, reflector);
+        enigma.set_transposition('A', 'A');
+
+        assert!(enigma.transpositions.is_empty())
+    }
+
+    #[test]
+    fn resetting_transposition_with_different_value_should_remove_existing() {
+        let left = rotors::create_rotor_3();
+        let middle = rotors::create_rotor_2();
+        let right = rotors::create_rotor_1();
+        let reflector = reflectors::create_reflector_b();
+
+        let mut enigma = Enigma::new(left, middle, right, reflector);
+        enigma.set_transposition('A', 'B');
+        enigma.set_transposition('A', 'C');
+
+        assert_eq!(
+            enigma.transpositions,
+            HashMap::from([('A', 'C'), ('C', 'A')])
+        )
+    }
+
+    #[test]
+    fn resetting_transposition_with_different_key_should_remove_existing() {
+        let left = rotors::create_rotor_3();
+        let middle = rotors::create_rotor_2();
+        let right = rotors::create_rotor_1();
+        let reflector = reflectors::create_reflector_b();
+
+        let mut enigma = Enigma::new(left, middle, right, reflector);
+        enigma.set_transposition('A', 'B');
+        enigma.set_transposition('B', 'C');
+
+        assert_eq!(
+            enigma.transpositions,
+            HashMap::from([('B', 'C'), ('C', 'B')])
+        )
     }
 }
