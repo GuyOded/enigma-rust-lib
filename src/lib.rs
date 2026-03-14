@@ -122,6 +122,10 @@ impl Enigma {
         self.transpositions.insert(second, first);
     }
 
+    pub fn get_transpositions(&self) -> &HashMap<char, char> {
+        return &self.transpositions;
+    }
+
     pub fn clear_transposition(&mut self, letter: char) -> Option<char> {
         if let Some(removed) = self.transpositions.remove(&letter) {
             self.transpositions.remove(&removed);
