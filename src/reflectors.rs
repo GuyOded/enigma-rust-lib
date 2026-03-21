@@ -1,8 +1,8 @@
-use crate::consts::ALPHABET_SIZE;
+use crate::{consts::ALPHABET_SIZE, letter_permutation::LetterPermutation};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Reflector {
-    pub map: &'static [(char, char); ALPHABET_SIZE],
+    pub map: LetterPermutation<'static>,
     pub name: &'static str,
 }
 
@@ -95,21 +95,21 @@ static REFLECTOR_C_MAP: [(char, char); ALPHABET_SIZE] = [
 
 pub fn create_reflector_a() -> Reflector {
     Reflector {
-        map: &REFLECTOR_A_MAP,
+        map: LetterPermutation::new(&REFLECTOR_A_MAP),
         name: "Reflector A",
     }
 }
 
 pub fn create_reflector_b() -> Reflector {
     Reflector {
-        map: &REFLECTOR_B_MAP,
+        map: LetterPermutation::new(&REFLECTOR_B_MAP),
         name: "Reflector B",
     }
 }
 
 pub fn create_reflector_c() -> Reflector {
     Reflector {
-        map: &REFLECTOR_C_MAP,
+        map: LetterPermutation::new(&REFLECTOR_C_MAP),
         name: "Reflector C",
     }
 }

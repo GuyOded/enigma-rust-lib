@@ -8,7 +8,7 @@ use reflectors::Reflector;
 use rotor::Rotor;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use crate::{consts::FIRST_LETTER, error::Error};
+use error::Error;
 
 #[derive(Debug)]
 pub struct Enigma {
@@ -57,7 +57,11 @@ impl Enigma {
         let enciphered = self.middle_rotor.borrow().map_letter(enciphered)?;
         let enciphered = self.left_rotor.borrow().map_letter(enciphered)?;
 
-        let enciphered = self.reflector.map[(enciphered as u8 - FIRST_LETTER as u8) as usize].1;
+        let enciphered = self
+            .reflector
+            .map
+            .get(enciphered)
+            .map_err(|_| Error::NonAlphabetic)?;
 
         let enciphered = self.left_rotor.borrow().inverse_map_letter(enciphered)?;
         let enciphered = self.middle_rotor.borrow().inverse_map_letter(enciphered)?;
