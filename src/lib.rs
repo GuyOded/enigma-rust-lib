@@ -1,5 +1,6 @@
 mod consts;
 pub mod error;
+mod letter_permutation;
 pub mod reflectors;
 pub mod rotor;
 
@@ -7,7 +8,7 @@ use reflectors::Reflector;
 use rotor::Rotor;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use crate::error::Error;
+use crate::{consts::FIRST_LETTER, error::Error};
 
 #[derive(Debug)]
 pub struct Enigma {
@@ -56,9 +57,9 @@ impl Enigma {
         let enciphered = self.middle_rotor.borrow().map_letter(enciphered)?;
         let enciphered = self.left_rotor.borrow().map_letter(enciphered)?;
 
-        let enciphered = self.reflector.map.get(&enciphered).unwrap_or(&enciphered);
+        let enciphered = self.reflector.map[(enciphered as u8 - FIRST_LETTER as u8) as usize].1;
 
-        let enciphered = self.left_rotor.borrow().inverse_map_letter(*enciphered)?;
+        let enciphered = self.left_rotor.borrow().inverse_map_letter(enciphered)?;
         let enciphered = self.middle_rotor.borrow().inverse_map_letter(enciphered)?;
         let enciphered = self.right_rotor.borrow().inverse_map_letter(enciphered)?;
 
