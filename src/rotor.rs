@@ -1,14 +1,14 @@
 use std::fmt::Debug;
 use std::{cell::RefCell, rc::Rc};
 
+use crate::letter_permutation::LetterPermutation;
 use crate::{consts, error::Error};
-use phf::Map;
 pub mod rotors;
 
 #[derive(Clone, Copy)]
 pub(super) struct RotorProps {
-    permutation: &'static Map<char, char>,
-    inverse: &'static Map<char, char>,
+    permutation: LetterPermutation<'static>,
+    inverse: LetterPermutation<'static>,
     step_position: u8,
     name: &'static str,
 }
@@ -24,8 +24,8 @@ impl Debug for RotorProps {
 
 impl RotorProps {
     fn new(
-        permutation: &'static Map<char, char>,
-        inverse: &'static Map<char, char>,
+        permutation: LetterPermutation<'static>,
+        inverse: LetterPermutation<'static>,
         step_position: char,
         name: &'static str,
     ) -> Self {
@@ -76,7 +76,7 @@ impl Rotor {
     pub fn map_letter(&self, letter: char) -> Result<char, Error> {
         self.calculate_mapped_letter_by_ring_setting(
             letter,
-            &self.rotor_props.permutation,
+            self.rotor_props.permutation,
             self.ring_setting,
         )
     }
@@ -84,7 +84,7 @@ impl Rotor {
     pub fn inverse_map_letter(&self, letter: char) -> Result<char, Error> {
         self.calculate_mapped_letter_by_ring_setting(
             letter,
-            &self.rotor_props.inverse,
+            self.rotor_props.inverse,
             -self.ring_setting,
         )
     }
@@ -135,7 +135,7 @@ impl Rotor {
     fn calculate_mapped_letter_by_ring_setting(
         &self,
         letter: char,
-        letter_map: &Map<char, char>,
+        letter_map: LetterPermutation,
         ring_setting_number: i8,
     ) -> Result<char, Error> {
         let letter = match letter.is_alphabetic() {
@@ -151,9 +151,9 @@ impl Rotor {
             .rem_euclid(consts::ALPHABET_SIZE as i8) as u8;
         let input_letter = (input_index + consts::FIRST_LETTER as u8) as char;
 
-        let mapped_letter = letter_map.get(&input_letter).unwrap();
+        let mapped_letter = letter_map.get(input_letter).unwrap();
 
-        let mapped_letter_increased_by_ring_setting = ((*mapped_letter as i8
+        let mapped_letter_increased_by_ring_setting = ((mapped_letter as i8
             - consts::FIRST_LETTER as i8
             - position_reduced_by_ring_setting as i8)
             .rem_euclid(consts::ALPHABET_SIZE as i8)

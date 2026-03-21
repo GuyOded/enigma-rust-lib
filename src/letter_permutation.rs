@@ -1,4 +1,4 @@
-use crate::consts::{ALPHABET_SIZE, FIRST_LETTER};
+use crate::consts::{ALPHABET_SIZE, FIRST_LETTER, LAST_LETTER};
 pub(crate) mod utils;
 
 #[derive(Debug, Clone, Copy)]
@@ -13,9 +13,9 @@ pub(crate) enum PermutationError {
 
 impl<'a> LetterPermutation<'a> {
     pub(crate) fn new(permutation: &'a [(char, char); ALPHABET_SIZE]) -> Self {
-        let mut values_exist = [false; 26];
+        let mut values_exist = [false; ALPHABET_SIZE];
 
-        permutation.iter().zip('A'..='Z').for_each(|(&(key, value), alphabet_letter)| {
+        permutation.iter().zip(FIRST_LETTER..=LAST_LETTER).for_each(|(&(key, value), alphabet_letter)| {
             if key != alphabet_letter {
                 panic!("Expected permutation keys to be ordered alphabetically uppercase letters. Found {key}, expected {alphabet_letter}.");
             }
