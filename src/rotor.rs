@@ -6,13 +6,13 @@ use crate::letter_permutation::LetterPermutation;
 use crate::{consts, error::Error};
 pub mod rotors;
 
-type Position = usize;
+type PositionType = usize;
 
 #[derive(Clone, Copy)]
 pub(super) struct RotorProps {
     permutation: LetterPermutation<'static>,
     inverse: LetterPermutation<'static>,
-    step_position: Position,
+    step_position: PositionType,
     name: &'static str,
 }
 
@@ -32,7 +32,7 @@ impl RotorProps {
         step_position: char,
         name: &'static str,
     ) -> Self {
-        let step_position = step_position as Position - consts::FIRST_LETTER as Position;
+        let step_position = step_position as PositionType - consts::FIRST_LETTER as PositionType;
 
         Self {
             permutation,
@@ -46,8 +46,8 @@ impl RotorProps {
 #[derive(Debug, Clone)]
 pub struct Rotor {
     rotor_props: RotorProps,
-    position: Position,
-    ring_setting: Position,
+    position: PositionType,
+    ring_setting: PositionType,
     next_rotor: Option<Rc<RefCell<Rotor>>>,
 }
 
@@ -65,8 +65,8 @@ impl Rotor {
         let position = position.to_ascii_uppercase();
         let ring_setting = ring_setting.to_ascii_uppercase();
 
-        let position = (position as u8 - consts::FIRST_LETTER as u8) as Position;
-        let ring_setting = (ring_setting as u8 - consts::FIRST_LETTER as u8) as Position;
+        let position = (position as u8 - consts::FIRST_LETTER as u8) as PositionType;
+        let ring_setting = (ring_setting as u8 - consts::FIRST_LETTER as u8) as PositionType;
 
         Self {
             rotor_props: props,
@@ -102,10 +102,13 @@ impl Rotor {
         }
     }
 
-    pub fn increment_by(&mut self, amount: Position) {
+    pub fn increment_by(&mut self, amount: PositionType) {
+        if amount == 0 {
+            return;
+        }
+
         let incremented_position = (self.position + (amount % ALPHABET_SIZE)) % ALPHABET_SIZE;
         self.set_position_from_int(incremented_position);
-        println!("i.p: {}", incremented_position);
 
         if let Some(next_rotor) = &mut self.next_rotor {
             let mut next_rotor_increment_amount = 0;
@@ -133,7 +136,7 @@ impl Rotor {
         }
 
         self.position =
-            position.to_ascii_uppercase() as Position - consts::FIRST_LETTER as Position;
+            position.to_ascii_uppercase() as PositionType - consts::FIRST_LETTER as PositionType;
     }
 
     pub fn get_position(&self) -> char {
@@ -141,7 +144,7 @@ impl Rotor {
     }
 
     /// Sets position from an integer. Note that the 0 corresponds to 'A' and 25 corresponds to 'Z'.
-    pub fn set_position_from_int(&mut self, position: Position) {
+    pub fn set_position_from_int(&mut self, position: PositionType) {
         if position >= consts::ALPHABET_SIZE {
             panic!(
                 "Position must be a valid letter index (between 0 and {})",
@@ -160,7 +163,7 @@ impl Rotor {
         &self,
         letter: char,
         letter_map: LetterPermutation,
-        ring_setting_number: Position,
+        ring_setting_number: PositionType,
     ) -> Result<char, Error> {
         let letter = match letter.is_alphabetic() {
             true => letter.to_ascii_uppercase(),
