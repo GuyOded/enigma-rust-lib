@@ -1,15 +1,18 @@
 use std::fmt::Debug;
 use std::{cell::RefCell, rc::Rc};
 
+use crate::consts::ALPHABET_SIZE;
 use crate::letter_permutation::LetterPermutation;
 use crate::{consts, error::Error};
 pub mod rotors;
+
+type Position = usize;
 
 #[derive(Clone, Copy)]
 pub(super) struct RotorProps {
     permutation: LetterPermutation<'static>,
     inverse: LetterPermutation<'static>,
-    step_position: u8,
+    step_position: Position,
     name: &'static str,
 }
 
@@ -29,7 +32,7 @@ impl RotorProps {
         step_position: char,
         name: &'static str,
     ) -> Self {
-        let step_position = step_position as u8 - consts::FIRST_LETTER as u8;
+        let step_position = step_position as Position - consts::FIRST_LETTER as Position;
 
         Self {
             permutation,
@@ -43,8 +46,8 @@ impl RotorProps {
 #[derive(Debug, Clone)]
 pub struct Rotor {
     rotor_props: RotorProps,
-    position: i8,
-    ring_setting: i8,
+    position: Position,
+    ring_setting: Position,
     next_rotor: Option<Rc<RefCell<Rotor>>>,
 }
 
@@ -62,8 +65,8 @@ impl Rotor {
         let position = position.to_ascii_uppercase();
         let ring_setting = ring_setting.to_ascii_uppercase();
 
-        let position = position as i8 - consts::FIRST_LETTER as i8;
-        let ring_setting = ring_setting as i8 - consts::FIRST_LETTER as i8;
+        let position = (position as u8 - consts::FIRST_LETTER as u8) as Position;
+        let ring_setting = (ring_setting as u8 - consts::FIRST_LETTER as u8) as Position;
 
         Self {
             rotor_props: props,
@@ -85,17 +88,37 @@ impl Rotor {
         self.calculate_mapped_letter_by_ring_setting(
             letter,
             self.rotor_props.inverse,
-            -self.ring_setting,
+            0 - self.ring_setting,
         )
     }
 
     pub fn increment(&mut self) {
         self.position += 1;
-        self.position %= consts::ALPHABET_SIZE as i8;
+        self.position %= consts::ALPHABET_SIZE;
         if let Some(next_rotor) = &mut self.next_rotor
-            && self.position == self.rotor_props.step_position as i8
+            && self.position == self.rotor_props.step_position
         {
             next_rotor.borrow_mut().increment();
+        }
+    }
+
+    pub fn increment_by(&mut self, amount: Position) {
+        let incremented_position = (self.position + (amount % ALPHABET_SIZE)) % ALPHABET_SIZE;
+        self.set_position_from_int(incremented_position);
+        println!("i.p: {}", incremented_position);
+
+        if let Some(next_rotor) = &mut self.next_rotor {
+            let mut next_rotor_increment_amount = 0;
+            if (incremented_position - self.position).rem_euclid(ALPHABET_SIZE)
+                >= (self.rotor_props.step_position - self.position).rem_euclid(ALPHABET_SIZE)
+            {
+                next_rotor_increment_amount += 1;
+            }
+
+            next_rotor_increment_amount += amount / ALPHABET_SIZE;
+            next_rotor
+                .borrow_mut()
+                .increment_by(next_rotor_increment_amount);
         }
     }
 
@@ -109,7 +132,8 @@ impl Rotor {
             panic!("Unable to set current position to non-alphabetic character (got {position})");
         }
 
-        self.position = position.to_ascii_uppercase() as i8 - consts::FIRST_LETTER as i8;
+        self.position =
+            position.to_ascii_uppercase() as Position - consts::FIRST_LETTER as Position;
     }
 
     pub fn get_position(&self) -> char {
@@ -117,15 +141,15 @@ impl Rotor {
     }
 
     /// Sets position from an integer. Note that the 0 corresponds to 'A' and 25 corresponds to 'Z'.
-    pub fn set_position_from_int(&mut self, position: u8) {
-        if position >= consts::ALPHABET_SIZE as u8 {
+    pub fn set_position_from_int(&mut self, position: Position) {
+        if position >= consts::ALPHABET_SIZE {
             panic!(
                 "Position must be a valid letter index (between 0 and {})",
                 consts::ALPHABET_SIZE - 1
             );
         }
 
-        self.position = position as i8;
+        self.position = position;
     }
 
     pub(super) fn set_next_rotor(&mut self, rotor: Rc<RefCell<Rotor>>) {
@@ -136,15 +160,15 @@ impl Rotor {
         &self,
         letter: char,
         letter_map: LetterPermutation,
-        ring_setting_number: i8,
+        ring_setting_number: Position,
     ) -> Result<char, Error> {
         let letter = match letter.is_alphabetic() {
             true => letter.to_ascii_uppercase(),
             false => return Err(Error::NonAlphabetic),
         };
 
-        let position_reduced_by_ring_setting: u8 =
-            (self.position - ring_setting_number).rem_euclid(consts::ALPHABET_SIZE as i8) as u8;
+        let position_reduced_by_ring_setting =
+            (self.position - ring_setting_number).rem_euclid(consts::ALPHABET_SIZE);
 
         let input_index = (letter as i8 - consts::FIRST_LETTER as i8
             + position_reduced_by_ring_setting as i8)
@@ -165,6 +189,8 @@ impl Rotor {
 
 #[cfg(test)]
 mod tests {
+    use std::{cell::RefCell, rc::Rc};
+
     use super::rotors;
 
     #[test]
@@ -187,5 +213,56 @@ mod tests {
         rotor.set_position_from_int(25);
 
         assert_eq!(rotor.get_position(), 'Z');
+    }
+
+    #[test]
+    fn increment_by_should_work() {
+        let mut rotor = rotors::create_rotor_1();
+        let second = Rc::new(RefCell::new(rotors::create_rotor_2()));
+        rotor.set_next_rotor(Rc::clone(&second));
+
+        const INCREMENT_AMOUNT: usize = 1052;
+        rotor.increment_by(INCREMENT_AMOUNT);
+        let first_rotor_position_after_inc_by = rotor.get_position();
+        let second_rotor_position_after_inc_by = second.borrow().get_position();
+
+        rotor.set_position('A');
+        second.borrow_mut().set_position('A');
+
+        for _ in 0..INCREMENT_AMOUNT {
+            rotor.increment();
+        }
+
+        assert_eq!(rotor.get_position(), first_rotor_position_after_inc_by);
+        assert_eq!(
+            second.borrow().get_position(),
+            second_rotor_position_after_inc_by
+        );
+    }
+
+    #[test]
+    fn increment_by_should_increment_once_when_first_rotor_step_is_hit() {
+        let mut rotor = rotors::create_rotor_1();
+        let second = Rc::new(RefCell::new(rotors::create_rotor_2()));
+        rotor.set_next_rotor(Rc::clone(&second));
+
+        rotor.set_position('R');
+        second.borrow_mut().set_position('S');
+
+        const INCREMENT_AMOUNT: usize = 23;
+        rotor.increment_by(INCREMENT_AMOUNT);
+        let second_rotor_position_after_inc_by = second.borrow().get_position();
+
+        rotor.set_position('R');
+        second.borrow_mut().set_position('S');
+
+        for _ in 0..INCREMENT_AMOUNT {
+            rotor.increment();
+        }
+
+        assert_eq!(
+            second.borrow().get_position(),
+            second_rotor_position_after_inc_by
+        );
     }
 }

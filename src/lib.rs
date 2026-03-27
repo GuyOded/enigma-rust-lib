@@ -196,17 +196,17 @@ impl Enigma {
         self.right_rotor.borrow_mut().set_position(position);
     }
 
-    pub fn set_left_rotor_position_from_int(&self, position: u8) {
+    pub fn set_left_rotor_position_from_int(&self, position: usize) {
         self.left_rotor.borrow_mut().set_position_from_int(position);
     }
 
-    pub fn set_middle_rotor_position_from_int(&self, position: u8) {
+    pub fn set_middle_rotor_position_from_int(&self, position: usize) {
         self.middle_rotor
             .borrow_mut()
             .set_position_from_int(position);
     }
 
-    pub fn set_right_rotor_position_from_int(&self, position: u8) {
+    pub fn set_right_rotor_position_from_int(&self, position: usize) {
         self.right_rotor
             .borrow_mut()
             .set_position_from_int(position);
