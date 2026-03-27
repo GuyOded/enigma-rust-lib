@@ -86,6 +86,10 @@ impl Enigma {
         text.chars().map(|c| self.encrypt_char(c))
     }
 
+    pub fn increment_by(&self, amount: usize) {
+        self.right_rotor.borrow_mut().increment_by(amount);
+    }
+
     ///
     /// Returns the encryption result of the character without incrementing the rotors
     ///
