@@ -47,27 +47,7 @@ impl Enigma {
     }
 
     pub fn encrypt_char(&self, letter: char) -> Result<char, Error> {
-        let letter = letter.to_ascii_uppercase();
-        let enciphered = self.transpositions.get(&letter).unwrap_or(&letter);
-
-        let enciphered = self
-            .right_rotor
-            .borrow_mut()
-            .increment_and_map(*enciphered)?;
-        let enciphered = self.middle_rotor.borrow().map_letter(enciphered)?;
-        let enciphered = self.left_rotor.borrow().map_letter(enciphered)?;
-
-        let enciphered = self
-            .reflector
-            .map
-            .get(enciphered)
-            .map_err(|_| Error::NonAlphabetic)?;
-
-        let enciphered = self.left_rotor.borrow().inverse_map_letter(enciphered)?;
-        let enciphered = self.middle_rotor.borrow().inverse_map_letter(enciphered)?;
-        let enciphered = self.right_rotor.borrow().inverse_map_letter(enciphered)?;
-
-        Ok(*self.transpositions.get(&enciphered).unwrap_or(&enciphered))
+        self.encrypt_char_inner(letter, true)
     }
 
     pub fn encrypt_string(&self, text: String) -> Result<String, Error> {
@@ -91,7 +71,10 @@ impl Enigma {
     }
 
     ///
-    /// Returns the encryption result of the character without incrementing the rotors
+    /// Returns the encryption result of the next character encryption without changing the rotors' position.
+    ///
+    /// The encryption works the same - increment rotor first, then calculate the character through all the permutations.
+    /// At the end of the encryption process the rotors are returned to their original location.
     ///
     pub fn peak_cipher(&self, char: char) -> Result<char, Error> {
         let rotor_positions = (
@@ -107,6 +90,13 @@ impl Enigma {
         self.set_right_rotor_position_from_char(rotor_positions.2);
 
         encryption_result
+    }
+
+    ///
+    /// Similar to peak_cipher but doesn't increment the rotor before mapping the given character through all permutations.
+    ///
+    pub fn peak_without_increment(&self, char: char) -> Result<char, Error> {
+        self.encrypt_char_inner(char, false)
     }
 
     pub fn set_transposition(&mut self, first: char, second: char) {
@@ -214,6 +204,38 @@ impl Enigma {
         self.right_rotor
             .borrow_mut()
             .set_position_from_int(position);
+    }
+
+    fn encrypt_char_inner(&self, letter: char, increment: bool) -> Result<char, Error> {
+        let letter = letter.to_ascii_uppercase();
+        let enciphered = self.transpositions.get(&letter).unwrap_or(&letter);
+
+        let encrypted_after_increment: char;
+        if increment {
+            encrypted_after_increment = self
+                .right_rotor
+                .borrow_mut()
+                .increment_and_map(*enciphered)?;
+        } else {
+            encrypted_after_increment = self.right_rotor.borrow().map_letter(*enciphered)?;
+        }
+        let enciphered = self
+            .middle_rotor
+            .borrow()
+            .map_letter(encrypted_after_increment)?;
+        let enciphered = self.left_rotor.borrow().map_letter(enciphered)?;
+
+        let enciphered = self
+            .reflector
+            .map
+            .get(enciphered)
+            .map_err(|_| Error::NonAlphabetic)?;
+
+        let enciphered = self.left_rotor.borrow().inverse_map_letter(enciphered)?;
+        let enciphered = self.middle_rotor.borrow().inverse_map_letter(enciphered)?;
+        let enciphered = self.right_rotor.borrow().inverse_map_letter(enciphered)?;
+
+        Ok(*self.transpositions.get(&enciphered).unwrap_or(&enciphered))
     }
 }
 
@@ -484,5 +506,56 @@ Outside, the street continued being a street with admirable consistency. Cars pa
             enigma.transpositions,
             HashMap::from([('B', 'C'), ('C', 'B')])
         )
+    }
+
+    #[test]
+    fn increment_by_should_work_for_every_position() {
+        let mut increment_by_result = String::new();
+        const TEST_LETTER: char = 'A';
+        const INCREMENT_CYCLES: usize = 100;
+        const INCREMENT_AMOUNT: usize = 7;
+
+        let enigma = Enigma::new(
+            rotors::create_rotor_1(),
+            rotors::create_rotor_2(),
+            rotors::create_rotor_3(),
+            reflectors::create_reflector_a(),
+        );
+
+        for _ in 0..INCREMENT_CYCLES {
+            enigma.increment_by(INCREMENT_AMOUNT);
+            increment_by_result.push(enigma.peak_without_increment(TEST_LETTER).unwrap());
+        }
+
+        let left_rotor_position_after_inc_by = enigma.get_left_rotor_position();
+        let middle_rotor_position_after_inc_by = enigma.get_middle_rotor_position();
+        let right_rotor_position_after_inc_by = enigma.get_right_rotor_position();
+
+        enigma.set_left_rotor_position_from_char('A');
+        enigma.set_middle_rotor_position_from_char('A');
+        enigma.set_right_rotor_position_from_char('A');
+        let mut encrypt_result = String::new();
+
+        for _ in 0..INCREMENT_CYCLES {
+            for _ in 0..INCREMENT_AMOUNT - 1 {
+                let _ = enigma.encrypt_char(TEST_LETTER);
+            }
+            encrypt_result.push(enigma.encrypt_char(TEST_LETTER).unwrap());
+        }
+
+        assert_eq!(
+            (
+                left_rotor_position_after_inc_by,
+                middle_rotor_position_after_inc_by,
+                right_rotor_position_after_inc_by
+            ),
+            (
+                enigma.get_left_rotor_position(),
+                enigma.get_middle_rotor_position(),
+                enigma.get_right_rotor_position()
+            )
+        );
+
+        assert_eq!(increment_by_result, encrypt_result);
     }
 }

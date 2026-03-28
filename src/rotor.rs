@@ -107,14 +107,18 @@ impl Rotor {
             return;
         }
 
-        let incremented_position = (self.position + (amount % ALPHABET_SIZE)) % ALPHABET_SIZE;
-        self.set_position_from_int(incremented_position);
+        let incremented_position = (self.position + amount) % ALPHABET_SIZE;
 
         if let Some(next_rotor) = &mut self.next_rotor {
             let mut next_rotor_increment_amount = 0;
-            if (incremented_position - self.position).rem_euclid(ALPHABET_SIZE)
-                >= (self.rotor_props.step_position - self.position).rem_euclid(ALPHABET_SIZE)
-            {
+            let num_of_steps_to_next_stepover =
+                match (self.rotor_props.step_position as isize - self.position as isize)
+                    .rem_euclid(ALPHABET_SIZE as isize) as usize
+                {
+                    0 => ALPHABET_SIZE,
+                    x => x,
+                };
+            if amount % ALPHABET_SIZE >= num_of_steps_to_next_stepover {
                 next_rotor_increment_amount += 1;
             }
 
@@ -123,6 +127,8 @@ impl Rotor {
                 .borrow_mut()
                 .increment_by(next_rotor_increment_amount);
         }
+
+        self.set_position_from_int(incremented_position);
     }
 
     pub fn increment_and_map(&mut self, letter: char) -> Result<char, Error> {
@@ -263,9 +269,29 @@ mod tests {
             rotor.increment();
         }
 
-        assert_eq!(
-            second.borrow().get_position(),
-            second_rotor_position_after_inc_by
-        );
+        assert_eq!('S', second_rotor_position_after_inc_by);
+    }
+
+    #[test]
+    fn increment_by_should_not_overflow_when_incremented_position_is_less_then_current() {
+        let mut rotor = rotors::create_rotor_1();
+        let second = Rc::new(RefCell::new(rotors::create_rotor_2()));
+        rotor.set_next_rotor(Rc::clone(&second));
+
+        rotor.set_position('Z');
+        second.borrow_mut().set_position('S');
+
+        const INCREMENT_AMOUNT: usize = 3;
+        rotor.increment_by(INCREMENT_AMOUNT);
+        let first_rotor_position_after_inc_by = rotor.get_position();
+
+        rotor.set_position('Z');
+        second.borrow_mut().set_position('S');
+
+        for _ in 0..INCREMENT_AMOUNT {
+            rotor.increment();
+        }
+
+        assert_eq!(rotor.get_position(), first_rotor_position_after_inc_by);
     }
 }
