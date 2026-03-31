@@ -135,9 +135,9 @@ mod tests {
 
     #[test]
     fn increment_by_should_work() {
-        let left = rotors::create_rotor_1();
+        let right = rotors::create_rotor_1();
         let middle = rotors::create_rotor_2();
-        let right = rotors::create_rotor_3();
+        let left = rotors::create_rotor_3();
         let mut controller = RotorsController::new(left, middle, right);
 
         const INCREMENT_AMOUNT: usize = 1052;
@@ -165,9 +165,9 @@ mod tests {
 
     #[test]
     fn increment_by_should_increment_next_once_when_first_rotor_step_is_hit() {
-        let left = rotors::create_rotor_1();
+        let right = rotors::create_rotor_1();
         let middle = rotors::create_rotor_2();
-        let right = rotors::create_rotor_3();
+        let left = rotors::create_rotor_3();
         let mut controller = RotorsController::new(left, middle, right);
 
         controller.set_right_rotor_position_from_char('R');
@@ -189,9 +189,9 @@ mod tests {
 
     #[test]
     fn increment_by_should_not_overflow_when_incremented_position_is_less_then_current() {
-        let left = rotors::create_rotor_1();
+        let right = rotors::create_rotor_1();
         let middle = rotors::create_rotor_2();
-        let right = rotors::create_rotor_3();
+        let left = rotors::create_rotor_3();
         let mut controller = RotorsController::new(left, middle, right);
 
         controller.set_right_rotor_position_from_char('Z');
