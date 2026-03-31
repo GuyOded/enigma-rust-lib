@@ -6,7 +6,7 @@ This library provides a simple implementation for the enigma machine in rust.
 
 ```rust
 use enigma::Enigma;
-use enigma::rotor::rotors;
+use enigma::rotors;
 use enigma::reflectors;
 
 // Create rotors & reflector using provided constructors
