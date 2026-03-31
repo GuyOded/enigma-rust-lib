@@ -1,15 +1,13 @@
 use std::fmt::Debug;
-use std::{cell::RefCell, rc::Rc};
 
 use crate::consts::ALPHABET_SIZE;
 use crate::letter_permutation::LetterPermutation;
 use crate::{consts, error::Error};
-pub mod rotors;
 
 type PositionType = usize;
 
 #[derive(Clone, Copy)]
-pub(super) struct RotorProps {
+pub(crate) struct RotorProps {
     permutation: LetterPermutation<'static>,
     inverse: LetterPermutation<'static>,
     step_position: PositionType,
@@ -26,7 +24,7 @@ impl Debug for RotorProps {
 }
 
 impl RotorProps {
-    fn new(
+    pub(crate) fn new(
         permutation: LetterPermutation<'static>,
         inverse: LetterPermutation<'static>,
         step_position: char,
@@ -48,16 +46,10 @@ pub struct Rotor {
     rotor_props: RotorProps,
     position: PositionType,
     ring_setting: PositionType,
-    next_rotor: Option<Rc<RefCell<Rotor>>>,
 }
 
 impl Rotor {
-    pub(super) fn new(
-        props: RotorProps,
-        position: char,
-        ring_setting: char,
-        next_rotor: Option<Rc<RefCell<Rotor>>>,
-    ) -> Self {
+    pub(super) fn new(props: RotorProps, position: char, ring_setting: char) -> Self {
         if !ring_setting.is_alphabetic() || !position.is_alphabetic() {
             panic!("Position and ring setting must letters")
         }
@@ -72,7 +64,6 @@ impl Rotor {
             rotor_props: props,
             position,
             ring_setting,
-            next_rotor,
         }
     }
 
@@ -92,48 +83,36 @@ impl Rotor {
         )
     }
 
-    pub fn increment(&mut self) {
+    pub(crate) fn increment(&mut self) -> bool {
         self.position += 1;
         self.position %= consts::ALPHABET_SIZE;
-        if let Some(next_rotor) = &mut self.next_rotor
-            && self.position == self.rotor_props.step_position
-        {
-            next_rotor.borrow_mut().increment();
-        }
+        self.position == self.rotor_props.step_position
     }
 
-    pub fn increment_by(&mut self, amount: PositionType) {
+    pub(crate) fn increment_by(&mut self, amount: PositionType) -> usize {
         if amount == 0 {
-            return;
+            return 0;
         }
 
         let incremented_position = (self.position + amount) % ALPHABET_SIZE;
 
-        if let Some(next_rotor) = &mut self.next_rotor {
-            let mut next_rotor_increment_amount = 0;
-            let num_of_steps_to_next_stepover =
-                match (self.rotor_props.step_position as isize - self.position as isize)
-                    .rem_euclid(ALPHABET_SIZE as isize) as usize
-                {
-                    0 => ALPHABET_SIZE,
-                    x => x,
-                };
-            if amount % ALPHABET_SIZE >= num_of_steps_to_next_stepover {
-                next_rotor_increment_amount += 1;
-            }
-
-            next_rotor_increment_amount += amount / ALPHABET_SIZE;
-            next_rotor
-                .borrow_mut()
-                .increment_by(next_rotor_increment_amount);
+        let mut next_rotor_increment_amount = 0;
+        let num_of_steps_to_next_stepover =
+            match (self.rotor_props.step_position as isize - self.position as isize)
+                .rem_euclid(ALPHABET_SIZE as isize) as usize
+            {
+                0 => ALPHABET_SIZE,
+                x => x,
+            };
+        if amount % ALPHABET_SIZE >= num_of_steps_to_next_stepover {
+            next_rotor_increment_amount += 1;
         }
 
-        self.set_position_from_int(incremented_position);
-    }
+        next_rotor_increment_amount += amount / ALPHABET_SIZE;
 
-    pub fn increment_and_map(&mut self, letter: char) -> Result<char, Error> {
-        self.increment();
-        self.map_letter(letter)
+        self.set_position_from_int(incremented_position);
+
+        next_rotor_increment_amount
     }
 
     pub fn set_position(&mut self, position: char) {
@@ -159,10 +138,6 @@ impl Rotor {
         }
 
         self.position = position;
-    }
-
-    pub(super) fn set_next_rotor(&mut self, rotor: Rc<RefCell<Rotor>>) {
-        self.next_rotor = Some(rotor);
     }
 
     fn calculate_mapped_letter_by_ring_setting(
@@ -198,9 +173,7 @@ impl Rotor {
 
 #[cfg(test)]
 mod tests {
-    use std::{cell::RefCell, rc::Rc};
-
-    use super::rotors;
+    use crate::rotors;
 
     #[test]
     #[should_panic]
@@ -222,76 +195,5 @@ mod tests {
         rotor.set_position_from_int(25);
 
         assert_eq!(rotor.get_position(), 'Z');
-    }
-
-    #[test]
-    fn increment_by_should_work() {
-        let mut rotor = rotors::create_rotor_1();
-        let second = Rc::new(RefCell::new(rotors::create_rotor_2()));
-        rotor.set_next_rotor(Rc::clone(&second));
-
-        const INCREMENT_AMOUNT: usize = 1052;
-        rotor.increment_by(INCREMENT_AMOUNT);
-        let first_rotor_position_after_inc_by = rotor.get_position();
-        let second_rotor_position_after_inc_by = second.borrow().get_position();
-
-        rotor.set_position('A');
-        second.borrow_mut().set_position('A');
-
-        for _ in 0..INCREMENT_AMOUNT {
-            rotor.increment();
-        }
-
-        assert_eq!(rotor.get_position(), first_rotor_position_after_inc_by);
-        assert_eq!(
-            second.borrow().get_position(),
-            second_rotor_position_after_inc_by
-        );
-    }
-
-    #[test]
-    fn increment_by_should_increment_once_when_first_rotor_step_is_hit() {
-        let mut rotor = rotors::create_rotor_1();
-        let second = Rc::new(RefCell::new(rotors::create_rotor_2()));
-        rotor.set_next_rotor(Rc::clone(&second));
-
-        rotor.set_position('R');
-        second.borrow_mut().set_position('S');
-
-        const INCREMENT_AMOUNT: usize = 23;
-        rotor.increment_by(INCREMENT_AMOUNT);
-        let second_rotor_position_after_inc_by = second.borrow().get_position();
-
-        rotor.set_position('R');
-        second.borrow_mut().set_position('S');
-
-        for _ in 0..INCREMENT_AMOUNT {
-            rotor.increment();
-        }
-
-        assert_eq!('S', second_rotor_position_after_inc_by);
-    }
-
-    #[test]
-    fn increment_by_should_not_overflow_when_incremented_position_is_less_then_current() {
-        let mut rotor = rotors::create_rotor_1();
-        let second = Rc::new(RefCell::new(rotors::create_rotor_2()));
-        rotor.set_next_rotor(Rc::clone(&second));
-
-        rotor.set_position('Z');
-        second.borrow_mut().set_position('S');
-
-        const INCREMENT_AMOUNT: usize = 3;
-        rotor.increment_by(INCREMENT_AMOUNT);
-        let first_rotor_position_after_inc_by = rotor.get_position();
-
-        rotor.set_position('Z');
-        second.borrow_mut().set_position('S');
-
-        for _ in 0..INCREMENT_AMOUNT {
-            rotor.increment();
-        }
-
-        assert_eq!(rotor.get_position(), first_rotor_position_after_inc_by);
     }
 }

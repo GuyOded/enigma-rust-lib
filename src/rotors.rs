@@ -168,7 +168,7 @@ pub fn create_rotor_1() -> Rotor {
         'R',
         "Rotor 1",
     );
-    Rotor::new(props, 'A', 'A', None)
+    Rotor::new(props, 'A', 'A')
 }
 
 pub fn create_rotor_2() -> Rotor {
@@ -178,7 +178,7 @@ pub fn create_rotor_2() -> Rotor {
         'F',
         "Rotor 2",
     );
-    Rotor::new(props, 'A', 'A', None)
+    Rotor::new(props, 'A', 'A')
 }
 
 pub fn create_rotor_3() -> Rotor {
@@ -188,7 +188,7 @@ pub fn create_rotor_3() -> Rotor {
         'W',
         "Rotor 3",
     );
-    Rotor::new(props, 'A', 'A', None)
+    Rotor::new(props, 'A', 'A')
 }
 
 pub fn create_rotor_4() -> Rotor {
@@ -198,7 +198,7 @@ pub fn create_rotor_4() -> Rotor {
         'K',
         "Rotor 4",
     );
-    Rotor::new(props, 'A', 'A', None)
+    Rotor::new(props, 'A', 'A')
 }
 
 pub fn create_rotor_5() -> Rotor {
@@ -208,5 +208,5 @@ pub fn create_rotor_5() -> Rotor {
         'A',
         "Rotor 5",
     );
-    Rotor::new(props, 'A', 'A', None)
+    Rotor::new(props, 'A', 'A')
 }

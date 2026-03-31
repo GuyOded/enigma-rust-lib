@@ -3,18 +3,20 @@ pub mod error;
 mod letter_permutation;
 pub mod reflectors;
 pub mod rotor;
+pub mod rotors;
+pub mod rotors_controller;
 
 use reflectors::Reflector;
 use rotor::Rotor;
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::collections::HashMap;
 
 use error::Error;
 
+use crate::rotors_controller::RotorsController;
+
 #[derive(Debug)]
 pub struct Enigma {
-    left_rotor: Rc<RefCell<Rotor>>,
-    middle_rotor: Rc<RefCell<Rotor>>,
-    right_rotor: Rc<RefCell<Rotor>>,
+    rotor_controller: RotorsController,
     reflector: Reflector,
     transpositions: HashMap<char, char>,
 }
@@ -26,48 +28,39 @@ impl Enigma {
         right_rotor: Rotor,
         reflector: Reflector,
     ) -> Self {
-        let left_rotor = Rc::new(RefCell::new(left_rotor));
-        let middle_rotor = Rc::new(RefCell::new(middle_rotor));
-        let right_rotor = Rc::new(RefCell::new(right_rotor));
-
-        middle_rotor
-            .borrow_mut()
-            .set_next_rotor(Rc::clone(&left_rotor));
-        right_rotor
-            .borrow_mut()
-            .set_next_rotor(Rc::clone(&middle_rotor));
-
         Self {
-            left_rotor,
-            middle_rotor,
-            right_rotor,
+            rotor_controller: RotorsController::new(left_rotor, middle_rotor, right_rotor),
             reflector,
             transpositions: HashMap::new(),
         }
     }
 
-    pub fn encrypt_char(&self, letter: char) -> Result<char, Error> {
-        self.encrypt_char_inner(letter, true)
+    pub fn encrypt_char(&mut self, letter: char) -> Result<char, Error> {
+        let enciphered = self.rotor_controller.increment_and_map(letter)?;
+
+        let enciphered = self
+            .reflector
+            .map
+            .get(enciphered)
+            .map_err(|_| Error::NonAlphabetic)?;
+
+        self.rotor_controller.inverse_map_letter(enciphered)
     }
 
-    pub fn encrypt_string(&self, text: String) -> Result<String, Error> {
+    pub fn encrypt_string(&mut self, text: String) -> Result<String, Error> {
         text.chars().map(|c| self.encrypt_char(c)).collect()
     }
 
-    pub fn encrypt_str(&self, text: &str) -> Result<String, Error> {
+    pub fn encrypt_str(&mut self, text: &str) -> Result<String, Error> {
         text.chars().map(|c| self.encrypt_char(c)).collect()
     }
 
-    pub fn encrypt_string_iter(&self, text: &String) -> impl Iterator<Item = Result<char, Error>> {
+    pub fn encrypt_str_iter(&mut self, text: &str) -> impl Iterator<Item = Result<char, Error>> {
         text.chars().map(|c| self.encrypt_char(c))
     }
 
-    pub fn encrypt_str_iter(&self, text: &str) -> impl Iterator<Item = Result<char, Error>> {
-        text.chars().map(|c| self.encrypt_char(c))
-    }
-
-    pub fn increment_by(&self, amount: usize) {
-        self.right_rotor.borrow_mut().increment_by(amount);
+    pub fn increment_by(&mut self, amount: usize) {
+        self.rotor_controller.increment_by(amount);
     }
 
     ///
@@ -76,11 +69,11 @@ impl Enigma {
     /// The encryption works the same - increment rotor first, then calculate the character through all the permutations.
     /// At the end of the encryption process the rotors are returned to their original location.
     ///
-    pub fn peak_cipher(&self, char: char) -> Result<char, Error> {
+    pub fn peak_cipher(&mut self, char: char) -> Result<char, Error> {
         let rotor_positions = (
-            self.get_left_rotor_position(),
-            self.get_middle_rotor_position(),
-            self.get_right_rotor_position(),
+            self.rotor_controller.get_left_position(),
+            self.rotor_controller.get_middle_position(),
+            self.rotor_controller.get_right_position(),
         );
 
         let encryption_result = self.encrypt_char(char);
@@ -95,8 +88,16 @@ impl Enigma {
     ///
     /// Similar to peak_cipher but doesn't increment the rotor before mapping the given character through all permutations.
     ///
-    pub fn peak_without_increment(&self, char: char) -> Result<char, Error> {
-        self.encrypt_char_inner(char, false)
+    pub fn peak_without_increment(&self, letter: char) -> Result<char, Error> {
+        let enciphered = self.rotor_controller.map_letter(letter)?;
+
+        let enciphered = self
+            .reflector
+            .map
+            .get(enciphered)
+            .map_err(|_| Error::NonAlphabetic)?;
+
+        self.rotor_controller.inverse_map_letter(enciphered)
     }
 
     pub fn set_transposition(&mut self, first: char, second: char) {
@@ -122,7 +123,7 @@ impl Enigma {
     }
 
     pub fn get_transpositions(&self) -> &HashMap<char, char> {
-        return &self.transpositions;
+        &self.transpositions
     }
 
     pub fn clear_transposition(&mut self, letter: char) -> Option<char> {
@@ -139,27 +140,15 @@ impl Enigma {
     }
 
     pub fn set_left_rotor(&mut self, rotor: Rotor) {
-        self.left_rotor = Rc::new(RefCell::new(rotor));
-        self.middle_rotor
-            .borrow_mut()
-            .set_next_rotor(Rc::clone(&self.left_rotor));
+        self.rotor_controller.set_left_rotor(rotor);
     }
 
     pub fn set_middle_rotor(&mut self, rotor: Rotor) {
-        self.middle_rotor = Rc::new(RefCell::new(rotor));
-        self.middle_rotor
-            .borrow_mut()
-            .set_next_rotor(Rc::clone(&self.left_rotor));
-        self.right_rotor
-            .borrow_mut()
-            .set_next_rotor(Rc::clone(&self.middle_rotor));
+        self.rotor_controller.set_middle_rotor(rotor);
     }
 
     pub fn set_right_rotor(&mut self, rotor: Rotor) {
-        self.right_rotor = Rc::new(RefCell::new(rotor));
-        self.right_rotor
-            .borrow_mut()
-            .set_next_rotor(Rc::clone(&self.middle_rotor));
+        self.rotor_controller.set_right_rotor(rotor);
     }
 
     pub fn set_reflector(&mut self, reflector: Reflector) {
@@ -167,75 +156,45 @@ impl Enigma {
     }
 
     pub fn get_left_rotor_position(&self) -> char {
-        self.left_rotor.borrow().get_position()
+        self.rotor_controller.get_left_position()
     }
 
     pub fn get_middle_rotor_position(&self) -> char {
-        self.middle_rotor.borrow().get_position()
+        self.rotor_controller.get_middle_position()
     }
 
     pub fn get_right_rotor_position(&self) -> char {
-        self.right_rotor.borrow().get_position()
+        self.rotor_controller.get_right_position()
     }
 
-    pub fn set_left_rotor_position_from_char(&self, position: char) {
-        self.left_rotor.borrow_mut().set_position(position);
+    pub fn set_left_rotor_position_from_char(&mut self, position: char) {
+        self.rotor_controller
+            .set_left_rotor_position_from_char(position);
     }
 
-    pub fn set_middle_rotor_position_from_char(&self, position: char) {
-        self.middle_rotor.borrow_mut().set_position(position);
+    pub fn set_middle_rotor_position_from_char(&mut self, position: char) {
+        self.rotor_controller
+            .set_middle_rotor_position_from_char(position);
     }
 
-    pub fn set_right_rotor_position_from_char(&self, position: char) {
-        self.right_rotor.borrow_mut().set_position(position);
+    pub fn set_right_rotor_position_from_char(&mut self, position: char) {
+        self.rotor_controller
+            .set_right_rotor_position_from_char(position);
     }
 
-    pub fn set_left_rotor_position_from_int(&self, position: usize) {
-        self.left_rotor.borrow_mut().set_position_from_int(position);
+    pub fn set_left_rotor_position_from_int(&mut self, position: usize) {
+        self.rotor_controller
+            .set_left_rotor_position_from_int(position);
     }
 
-    pub fn set_middle_rotor_position_from_int(&self, position: usize) {
-        self.middle_rotor
-            .borrow_mut()
-            .set_position_from_int(position);
+    pub fn set_middle_rotor_position_from_int(&mut self, position: usize) {
+        self.rotor_controller
+            .set_middle_rotor_position_from_int(position);
     }
 
-    pub fn set_right_rotor_position_from_int(&self, position: usize) {
-        self.right_rotor
-            .borrow_mut()
-            .set_position_from_int(position);
-    }
-
-    fn encrypt_char_inner(&self, letter: char, increment: bool) -> Result<char, Error> {
-        let letter = letter.to_ascii_uppercase();
-        let enciphered = self.transpositions.get(&letter).unwrap_or(&letter);
-
-        let encrypted_after_increment: char;
-        if increment {
-            encrypted_after_increment = self
-                .right_rotor
-                .borrow_mut()
-                .increment_and_map(*enciphered)?;
-        } else {
-            encrypted_after_increment = self.right_rotor.borrow().map_letter(*enciphered)?;
-        }
-        let enciphered = self
-            .middle_rotor
-            .borrow()
-            .map_letter(encrypted_after_increment)?;
-        let enciphered = self.left_rotor.borrow().map_letter(enciphered)?;
-
-        let enciphered = self
-            .reflector
-            .map
-            .get(enciphered)
-            .map_err(|_| Error::NonAlphabetic)?;
-
-        let enciphered = self.left_rotor.borrow().inverse_map_letter(enciphered)?;
-        let enciphered = self.middle_rotor.borrow().inverse_map_letter(enciphered)?;
-        let enciphered = self.right_rotor.borrow().inverse_map_letter(enciphered)?;
-
-        Ok(*self.transpositions.get(&enciphered).unwrap_or(&enciphered))
+    pub fn set_right_rotor_position_from_int(&mut self, position: usize) {
+        self.rotor_controller
+            .set_right_rotor_position_from_int(position);
     }
 }
 
@@ -244,7 +203,7 @@ mod tests {
     use std::collections::HashMap;
 
     use crate::error::Error;
-    use crate::rotor::rotors;
+    use crate::rotors;
     use crate::{Enigma, reflectors};
 
     #[test]
@@ -254,7 +213,7 @@ mod tests {
         let right = rotors::create_rotor_1();
         let reflector = reflectors::create_reflector_b();
 
-        let enigma = Enigma::new(left, middle, right, reflector);
+        let mut enigma = Enigma::new(left, middle, right, reflector);
 
         let encrypted = enigma.encrypt_string(String::from("HelloWorld")).unwrap();
 
@@ -268,7 +227,7 @@ mod tests {
         let right = rotors::create_rotor_1();
         let reflector = reflectors::create_reflector_b();
 
-        let enigma = Enigma::new(left, middle, right, reflector);
+        let mut enigma = Enigma::new(left, middle, right, reflector);
 
         let deciphered = enigma.encrypt_string(String::from("MFNCZBBFZM")).unwrap();
 
@@ -311,7 +270,7 @@ Outside, the street continued being a street with admirable consistency. Cars pa
         let right = rotors::create_rotor_1();
         let reflector = reflectors::create_reflector_b();
 
-        let enigma = Enigma::new(left, middle, right, reflector);
+        let mut enigma = Enigma::new(left, middle, right, reflector);
 
         let encrypted = enigma.encrypt_string(String::from("HelloWorld")).unwrap();
 
@@ -331,7 +290,7 @@ Outside, the street continued being a street with admirable consistency. Cars pa
         let right = rotors::create_rotor_1();
         let reflector = reflectors::create_reflector_b();
 
-        let enigma = Enigma::new(left, middle, right, reflector);
+        let mut enigma = Enigma::new(left, middle, right, reflector);
 
         let text = String::from(
             "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
@@ -350,7 +309,7 @@ Outside, the street continued being a street with admirable consistency. Cars pa
         let right = rotors::create_rotor_1();
         let reflector = reflectors::create_reflector_b();
 
-        let enigma = Enigma::new(left, middle, right, reflector);
+        let mut enigma = Enigma::new(left, middle, right, reflector);
 
         let r = enigma.encrypt_char(' ');
         assert_eq!(r.err().unwrap(), Error::NonAlphabetic)
@@ -398,10 +357,10 @@ Outside, the street continued being a street with admirable consistency. Cars pa
         let right = rotors::create_rotor_1();
         let reflector = reflectors::create_reflector_b();
 
-        let enigma = Enigma::new(left, middle, right, reflector);
+        let mut enigma = Enigma::new(left, middle, right, reflector);
 
         let encrypted: String = enigma
-            .encrypt_string_iter(&String::from("HelloWorld"))
+            .encrypt_str_iter(&"HelloWorld")
             .map(|r| r.unwrap())
             .collect();
 
@@ -415,7 +374,7 @@ Outside, the street continued being a street with admirable consistency. Cars pa
         let right = rotors::create_rotor_1();
         let reflector = reflectors::create_reflector_b();
 
-        let enigma = Enigma::new(left, middle, right, reflector);
+        let mut enigma = Enigma::new(left, middle, right, reflector);
 
         let encrypted: String = enigma.encrypt_str("HelloWorld").unwrap();
 
@@ -429,7 +388,7 @@ Outside, the street continued being a street with admirable consistency. Cars pa
         let right = rotors::create_rotor_1();
         let reflector = reflectors::create_reflector_b();
 
-        let enigma = Enigma::new(left, middle, right, reflector);
+        let mut enigma = Enigma::new(left, middle, right, reflector);
         (0..28).for_each(|_| assert_eq!(enigma.peak_cipher('H').unwrap(), 'M'));
     }
 
@@ -515,7 +474,7 @@ Outside, the street continued being a street with admirable consistency. Cars pa
         const INCREMENT_CYCLES: usize = 100;
         const INCREMENT_AMOUNT: usize = 7;
 
-        let enigma = Enigma::new(
+        let mut enigma = Enigma::new(
             rotors::create_rotor_1(),
             rotors::create_rotor_2(),
             rotors::create_rotor_3(),
