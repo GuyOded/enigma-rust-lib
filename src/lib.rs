@@ -36,7 +36,10 @@ impl Enigma {
     }
 
     pub fn encrypt_char(&mut self, letter: char) -> Result<char, Error> {
-        let enciphered = self.rotor_controller.increment_and_map(letter)?;
+        let letter = letter.to_ascii_uppercase();
+
+        let enciphered = *self.transpositions.get(&letter).unwrap_or(&letter);
+        let enciphered = self.rotor_controller.increment_and_map(enciphered)?;
 
         let enciphered = self
             .reflector
@@ -44,7 +47,8 @@ impl Enigma {
             .get(enciphered)
             .map_err(|_| Error::NonAlphabetic)?;
 
-        self.rotor_controller.inverse_map_letter(enciphered)
+        let enciphered = self.rotor_controller.inverse_map_letter(enciphered)?;
+        Ok(*self.transpositions.get(&enciphered).unwrap_or(&enciphered))
     }
 
     pub fn encrypt_string(&mut self, text: String) -> Result<String, Error> {
@@ -89,7 +93,10 @@ impl Enigma {
     /// Similar to peak_cipher but doesn't increment the rotor before mapping the given character through all permutations.
     ///
     pub fn peak_without_increment(&self, letter: char) -> Result<char, Error> {
-        let enciphered = self.rotor_controller.map_letter(letter)?;
+        let letter = letter.to_ascii_uppercase();
+
+        let enciphered = *self.transpositions.get(&letter).unwrap_or(&letter);
+        let enciphered = self.rotor_controller.map_letter(enciphered)?;
 
         let enciphered = self
             .reflector
@@ -97,7 +104,9 @@ impl Enigma {
             .get(enciphered)
             .map_err(|_| Error::NonAlphabetic)?;
 
-        self.rotor_controller.inverse_map_letter(enciphered)
+        let enciphered = self.rotor_controller.inverse_map_letter(enciphered)?;
+
+        Ok(*self.transpositions.get(&enciphered).unwrap_or(&enciphered))
     }
 
     pub fn set_transposition(&mut self, first: char, second: char) {
@@ -281,6 +290,26 @@ Outside, the street continued being a street with admirable consistency. Cars pa
         let plain = enigma.encrypt_string(encrypted).unwrap();
 
         assert_eq!(plain, "HELLOWORLD");
+    }
+
+    #[test]
+    fn encrypt_with_transpositions_should_work() {
+        let mut enigma = Enigma::new(
+            rotors::create_rotor_1(),
+            rotors::create_rotor_2(),
+            rotors::create_rotor_3(),
+            reflectors::create_reflector_a(),
+        );
+        enigma.set_transposition('H', 'G');
+        enigma.set_transposition('W', 'B');
+        enigma.set_transposition('L', 'T');
+        enigma.set_transposition('D', 'K');
+        enigma.set_transposition('O', 'E');
+
+        assert_eq!(
+            "UFMKLHQKUY",
+            enigma.encrypt_string(String::from("HELLOWORLD")).unwrap()
+        )
     }
 
     #[test]
