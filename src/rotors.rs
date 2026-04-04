@@ -1,6 +1,6 @@
 use crate::consts::ALPHABET_SIZE;
 use crate::letter_permutation::{LetterPermutation, utils as permutation_utils};
-use crate::rotor::{Rotor, RotorProps};
+use crate::rotor::{Rotor, RotorProps, RotorType};
 
 macro_rules! bidir_map {
     ($forward:ident, $inverse:ident, {$($k:expr => $v:expr),*$(,)?}) => {
@@ -166,7 +166,7 @@ pub fn create_rotor_1() -> Rotor {
         LetterPermutation::new(&ROTOR_1_PERMUTATION),
         LetterPermutation::new(&ROTOR_1_INVERSE),
         'R',
-        "Rotor 1",
+        RotorType::Rotor1,
     );
     Rotor::new(props, 'A', 'A')
 }
@@ -176,7 +176,7 @@ pub fn create_rotor_2() -> Rotor {
         LetterPermutation::new(&ROTOR_2_PERMUTATION),
         LetterPermutation::new(&ROTOR_2_INVERSE),
         'F',
-        "Rotor 2",
+        RotorType::Rotor2,
     );
     Rotor::new(props, 'A', 'A')
 }
@@ -186,7 +186,7 @@ pub fn create_rotor_3() -> Rotor {
         LetterPermutation::new(&ROTOR_3_PERMUTATION),
         LetterPermutation::new(&ROTOR_3_INVERSE),
         'W',
-        "Rotor 3",
+        RotorType::Rotor3,
     );
     Rotor::new(props, 'A', 'A')
 }
@@ -196,7 +196,7 @@ pub fn create_rotor_4() -> Rotor {
         LetterPermutation::new(&ROTOR_4_PERMUTATION),
         LetterPermutation::new(&ROTOR_4_INVERSE),
         'K',
-        "Rotor 4",
+        RotorType::Rotor4,
     );
     Rotor::new(props, 'A', 'A')
 }
@@ -206,7 +206,7 @@ pub fn create_rotor_5() -> Rotor {
         LetterPermutation::new(&ROTOR_5_PERMUTATION),
         LetterPermutation::new(&ROTOR_5_INVERSE),
         'A',
-        "Rotor 5",
+        RotorType::Rotor5,
     );
     Rotor::new(props, 'A', 'A')
 }

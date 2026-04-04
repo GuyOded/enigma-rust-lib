@@ -6,19 +6,28 @@ use crate::{consts, error::Error};
 
 type PositionType = usize;
 
-#[derive(Clone, Copy)]
-pub(crate) struct RotorProps {
+#[derive(Debug, Clone)]
+pub enum RotorType {
+    Rotor1,
+    Rotor2,
+    Rotor3,
+    Rotor4,
+    Rotor5,
+}
+
+#[derive(Clone)]
+pub struct RotorProps {
     permutation: LetterPermutation<'static>,
     inverse: LetterPermutation<'static>,
     step_position: PositionType,
-    name: &'static str,
+    typ: RotorType,
 }
 
 impl Debug for RotorProps {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("RotorProps")
             .field("step_position", &self.step_position)
-            .field("name", &self.name)
+            .field("typ", &self.typ)
             .finish()
     }
 }
@@ -28,7 +37,7 @@ impl RotorProps {
         permutation: LetterPermutation<'static>,
         inverse: LetterPermutation<'static>,
         step_position: char,
-        name: &'static str,
+        typ: RotorType,
     ) -> Self {
         let step_position = step_position as PositionType - consts::FIRST_LETTER as PositionType;
 
@@ -36,7 +45,7 @@ impl RotorProps {
             permutation,
             inverse,
             step_position,
-            name,
+            typ,
         }
     }
 }
